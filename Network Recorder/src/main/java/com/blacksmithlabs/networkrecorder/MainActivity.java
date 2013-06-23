@@ -1,0 +1,101 @@
+package com.blacksmithlabs.networkrecorder;
+
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.PagerTabStrip;
+import android.support.v4.view.PagerTitleStrip;
+import android.support.v4.view.ViewPager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.View;
+import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends FragmentActivity {
+
+	MainPageAdapter pageAdapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+	    List<Fragment> fragments = getFragments();
+	    pageAdapter = new MainPageAdapter(getSupportFragmentManager(), fragments);
+	    ViewPager pager = (ViewPager)findViewById(R.id.main_pager);
+	    pager.setAdapter(pageAdapter);
+
+	    PagerTabStrip tabs = (PagerTabStrip)findViewById(R.id.main_pager_title);
+	    tabs.setDrawFullUnderline(false);
+    }
+
+/*
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+*/
+
+	private List<Fragment> getFragments() {
+		final List<Fragment> fragments = new ArrayList<Fragment>();
+
+		final ApplicationListFragment appListFragment = new ApplicationListFragment();
+		appListFragment.setAppClickListener(new ApplicationListFragment.OnAppClickListener() {
+			@Override
+			public void onAppClick(ApplicationHelper.DroidApp app) {
+				// Bring up the options dialog
+				Log.d("networkrecorder", "Selected app: " + app);
+			}
+
+			@Override
+			public boolean onAppLongClick(ApplicationHelper.DroidApp app) {
+				return false;
+			}
+		});
+		fragments.add(appListFragment);
+
+		// TODO make into the log fragment
+		final Fragment logFragment = new Fragment();
+		fragments.add(logFragment);
+
+		return fragments;
+	}
+
+	private class MainPageAdapter extends FragmentPagerAdapter {
+		final private List<Fragment> fragments;
+
+		public MainPageAdapter(FragmentManager fm, List<Fragment> fragments) {
+			super(fm);
+			this.fragments = fragments;
+		}
+
+		@Override
+		public Fragment getItem(int position) {
+			return fragments.get(position);
+		}
+
+		@Override
+		public int getCount() {
+			return fragments.size();
+		}
+
+		@Override
+		public CharSequence getPageTitle(int position) {
+			switch(position) {
+				case 0:
+					return getString(R.string.title_applications);
+				case 1:
+					return getString(R.string.title_logs);
+			}
+			return null;
+		}
+	}
+}
