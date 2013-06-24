@@ -19,6 +19,7 @@ import java.util.Comparator;
 public class ApplicationListFragment extends Fragment
 		implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener,
 				ApplicationHelper.ApplicationHandler {
+
 	private ListView appListView;
 
 	private OnAppClickListener clickListener = null;
@@ -54,14 +55,14 @@ public class ApplicationListFragment extends Fragment
 		// Sort applications, selected first then alphabetically
 		Arrays.sort(applications, new Comparator<ApplicationHelper.DroidApp>() {
 			@Override
-			public int compare(ApplicationHelper.DroidApp o1, ApplicationHelper.DroidApp o2) {
-				if (o1.firstseen != o2.firstseen) {
-					return (o1.firstseen ? -1 : 1);
+			public int compare(ApplicationHelper.DroidApp app1, ApplicationHelper.DroidApp app2) {
+				if (app1.firstseen != app2.firstseen) {
+					return (app1.firstseen ? -1 : 1);
 				}
-				if (o1.selected == o2.selected) {
-					return String.CASE_INSENSITIVE_ORDER.compare(o1.names[0], o2.names[0]);
+				if (app1.selected == app2.selected) {
+					return String.CASE_INSENSITIVE_ORDER.compare(app1.names[0], app2.names[0]);
 				}
-				if (o1.selected)
+				if (app1.selected)
 					return -1;
 				return 1;
 			}

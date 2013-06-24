@@ -16,6 +16,7 @@ import com.blacksmithlabs.networkrecorder.R;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by brian on 6/22/13.
@@ -23,7 +24,21 @@ import java.util.List;
 public class ApplicationHelper {
 
 	// Cached applications
+	protected static Map<Integer, DroidApp> applicationLookup = null;
 	protected static DroidApp applications[] = null;
+
+	/**
+	 * Get specific information about an app. Not - only works after loadApps has been called
+	 * @depends loadApps
+	 * @param uid the UID of the app
+	 * @return the App information
+	 */
+	public static DroidApp getAppInfo(int uid) {
+		if (applicationLookup == null)
+			return null;
+
+		return applicationLookup.get(uid);
+	}
 
 	/**
 	 * Get all the installed network applications
@@ -52,7 +67,7 @@ public class ApplicationHelper {
 			public void handleMessage(Message msg) {
 				try
 				{
-					loadApps(ctx);
+					readApps(ctx);
 				}
 				catch (Exception ex)
 				{
@@ -78,8 +93,9 @@ public class ApplicationHelper {
 	/**
 	 * Do the heavy lifting of loading the applications
 	 * @param ctx application context (mandatory)
+	 * @throws Exception
 	 */
-	private static void loadApps(Context ctx) throws Exception {
+	private static void readApps(Context ctx) throws Exception {
 		final SharedPreferences preferences = ctx.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
 		// Allowed application names separated by pipe '|' (persisted)
 		final String savedUid = preferences.getString(Constants.PREF_SELECTED_UID, "");
@@ -94,8 +110,9 @@ public class ApplicationHelper {
 
 		final PackageManager pkgManager = ctx.getPackageManager();
 		final List<ApplicationInfo> installed = pkgManager.getInstalledApplications(0);
-		final HashMap<Integer, DroidApp> map = new HashMap<Integer, DroidApp>();
 		final SharedPreferences.Editor edit = preferences.edit();
+
+		applicationLookup = new HashMap<Integer, DroidApp>();
 
 		boolean changed = false;
 		String name = null;
@@ -104,7 +121,7 @@ public class ApplicationHelper {
 
 		for (final ApplicationInfo apInfo : installed) {
 			boolean firstseen = false;
-			app = map.get(apInfo.uid);
+			app = applicationLookup.get(apInfo.uid);
 			// Filter applications which are not allowed to access the Internet
 			if (app == null && PackageManager.PERMISSION_GRANTED != pkgManager.checkPermission(android.Manifest.permission.INTERNET, apInfo.packageName)) {
 				continue;
@@ -130,7 +147,7 @@ public class ApplicationHelper {
 				app.uid = apInfo.uid;
 				app.names = new String[] { name };
 				app.appinfo = apInfo;
-				map.put(apInfo.uid, app);
+				applicationLookup.put(apInfo.uid, app);
 			} else {
 				final String newnames[] = new String[app.names.length + 1];
 				System.arraycopy(app.names, 0, newnames, 0, app.names.length);
@@ -154,17 +171,17 @@ public class ApplicationHelper {
 				// TODO add in kernel and other apps when we support them
 		};
 		for (DroidApp dapp : special) {
-			if (dapp.uid != -1 && !map.containsKey(dapp.uid)) {
+			if (dapp.uid != -1 && !applicationLookup.containsKey(dapp.uid)) {
 				// Is it selected?
 				if (selected.contains(dapp.uid)) {
 					dapp.selected = true;
 				}
-				map.put(dapp.uid, dapp);
+				applicationLookup.put(dapp.uid, dapp);
 			}
 		}
 
 		// Convert the map into an array
-		applications = map.values().toArray(new DroidApp[map.size()]);
+		applications = applicationLookup.values().toArray(new DroidApp[applicationLookup.size()]);
 	}
 
 	private static void onAppsLoaded(ApplicationHandler handler) {

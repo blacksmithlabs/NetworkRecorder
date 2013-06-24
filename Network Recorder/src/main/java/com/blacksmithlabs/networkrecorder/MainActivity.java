@@ -32,17 +32,8 @@ public class MainActivity extends FragmentActivity {
 	    pager.setAdapter(pageAdapter);
 
 	    PagerTabStrip tabs = (PagerTabStrip)findViewById(R.id.main_pager_title);
-	    tabs.setDrawFullUnderline(false);
+	    tabs.setTabIndicatorColor(getResources().getColor(android.R.color.holo_blue_dark));
     }
-
-/*
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-*/
 
 	private List<Fragment> getFragments() {
 		final List<Fragment> fragments = new ArrayList<Fragment>();
@@ -62,9 +53,9 @@ public class MainActivity extends FragmentActivity {
 		});
 		fragments.add(appListFragment);
 
-		// TODO make into the log fragment
-		final Fragment logFragment = new Fragment();
-		fragments.add(logFragment);
+		final LogListFragment logListFragment = new LogListFragment();
+		// TODO click handler? Or do we want that in the fragment?
+		fragments.add(logListFragment);
 
 		return fragments;
 	}

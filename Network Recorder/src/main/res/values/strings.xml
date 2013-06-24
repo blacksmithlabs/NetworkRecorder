@@ -5,9 +5,14 @@
     <string name="action_settings">Settings</string>
 
     <string name="working">Working...</string>
+
     <string name="reading_apps">Reading installed applications</string>
     <string name="reading_apps_error">Error reading installed applications</string>
     <string name="reading_apps_error_message">Error reading installed applications: %1</string>
+
+    <string name="reading_logs">Reading recorded logs</string>
+    <string name="reading_logs_error">Error reading recorded logs</string>
+    <string name="reading_logs_error_message">Error reading recorded logs: %1</string>
 
     <string name="title_applications">Applications</string>
     <string name="title_logs">Logs</string>
