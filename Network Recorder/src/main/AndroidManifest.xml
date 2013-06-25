@@ -22,9 +22,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LogListFragment"/>
+        <activity android:name="com.blacksmithlabs.networkrecorder.LogListFragment" />
 
-        <service android:name=".NetworkRecorderService"/>
+        <service android:name="com.blacksmithlabs.networkrecorder.NetworkRecorderService" />
+
+        <activity
+            android:name="com.blacksmithlabs.networkrecorder.LogView"
+            android:label="@string/title_activity_log_view" >
+        </activity>
+        <activity android:name=".LogView"/>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -32,6 +38,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_SUPERUSER" />
 
-    <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:anyDensity="true" />
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:smallScreens="true" />
 
 </manifest>

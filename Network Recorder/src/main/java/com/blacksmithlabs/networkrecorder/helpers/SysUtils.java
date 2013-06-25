@@ -22,6 +22,11 @@ public class SysUtils {
 		}
 	}
 
+	public static boolean installBinaries(Context context) {
+		// TODO implement
+		return true;
+	}
+
 	public static String executeScript(Context context, String tag, String script, boolean waitForExit, boolean asRoot) {
 		synchronized (SCRIPT) {
 			final File f = new File(context.getFilesDir().getAbsolutePath(), SCRIPT);

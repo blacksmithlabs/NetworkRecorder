@@ -1,5 +1,6 @@
 package com.blacksmithlabs.networkrecorder;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -42,8 +43,13 @@ public class MainActivity extends FragmentActivity {
 		appListFragment.setAppClickListener(new ApplicationListFragment.OnAppClickListener() {
 			@Override
 			public void onAppClick(ApplicationHelper.DroidApp app) {
-				// Bring up the options dialog
+				// TODO Bring up the options dialog
 				Log.d("networkrecorder", "Selected app: " + app);
+				// Temporary test of the service - no way to kill it...
+				final Intent startService = new Intent(MainActivity.this, NetworkRecorderService.class);
+				startService.putExtra(NetworkRecorderService.EXTRA_APP_UID, app.uid);
+				startService.putExtra(NetworkRecorderService.EXTRA_PORTS, "80|8080");
+				startService(startService);
 			}
 
 			@Override
