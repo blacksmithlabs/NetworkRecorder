@@ -13,11 +13,19 @@ public class MessageBox {
 	 * @param msg message
 	 */
 	public static void alert(Context ctx, CharSequence msg) {
+		alert(ctx, msg, null);
+	}
+	public static void alert(Context ctx, CharSequence msg, CharSequence title) {
 		if (ctx != null) {
-			new AlertDialog.Builder(ctx)
-					.setNeutralButton(android.R.string.ok, null)
-					.setMessage(msg)
-					.show();
+			AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+			builder.setNeutralButton(android.R.string.ok, null)
+				.setMessage(msg);
+
+			if (title != null) {
+				builder.setTitle(title);
+			}
+
+			builder.show();
 		}
 	}
 }

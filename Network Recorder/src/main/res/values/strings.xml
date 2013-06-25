@@ -17,4 +17,7 @@
     <string name="title_applications">Applications</string>
     <string name="title_logs">Logs</string>
 
+    <string name="error_title">Network Recorder Error</string>
+    <string name="error_noroot">Network Recorder requires root/superuser access</string>
+
 </resources>

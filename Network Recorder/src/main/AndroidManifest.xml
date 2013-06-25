@@ -23,6 +23,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".LogListFragment"/>
+
+        <service android:name=".NetworkRecorderService"/>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
