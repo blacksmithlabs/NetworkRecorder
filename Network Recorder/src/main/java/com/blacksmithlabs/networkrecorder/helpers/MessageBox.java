@@ -2,6 +2,7 @@ package com.blacksmithlabs.networkrecorder.helpers;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import com.blacksmithlabs.networkrecorder.R;
 
 /**
  * Created by brian on 6/22/13.
@@ -27,5 +28,9 @@ public class MessageBox {
 
 			builder.show();
 		}
+	}
+
+	public static void error(Context ctx, CharSequence msg) {
+		alert(ctx, msg, ctx.getString(R.string.error_title));
 	}
 }

@@ -22,15 +22,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.blacksmithlabs.networkrecorder.LogListFragment" />
 
         <service android:name="com.blacksmithlabs.networkrecorder.NetworkRecorderService" />
 
         <activity
-            android:name="com.blacksmithlabs.networkrecorder.LogView"
+            android:name="com.blacksmithlabs.networkrecorder.LogViewActivity"
             android:label="@string/title_activity_log_view" >
         </activity>
-        <activity android:name=".LogView"/>
+        <activity
+            android:name="com.blacksmithlabs.networkrecorder.LogSettingsActivity"
+            android:label="@string/title_activity_log_settings"
+            android:parentActivityName="MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="MainActivity" />
+        </activity>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />

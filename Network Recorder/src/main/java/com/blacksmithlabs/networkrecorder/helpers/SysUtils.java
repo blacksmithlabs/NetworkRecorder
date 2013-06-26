@@ -1,5 +1,6 @@
 package com.blacksmithlabs.networkrecorder.helpers;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.util.Log;
 
@@ -50,5 +51,17 @@ public class SysUtils {
 
 			return new ShellCommand(command, tag).start(waitForExit);
 		}
+	}
+
+	public static boolean isServiceRunning(Context context, String serviceName) {
+		final ActivityManager manager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+
+		for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+			if (serviceName.equals(service.service.getClassName())) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -1,7 +1,6 @@
 package com.blacksmithlabs.networkrecorder;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -46,7 +45,7 @@ public class NetworkRecorderService extends Service {
 		Log.d("NetworkRecorder", "[service] onCreate");
 
 		if (!hasRoot()) {
-			MessageBox.alert(this, getString(R.string.error_noroot), getString(R.string.error_title));
+			MessageBox.error(this, getString(R.string.error_noroot));
 			hasRoot = false;
 			stopSelf();
 			return;
@@ -87,6 +86,7 @@ public class NetworkRecorderService extends Service {
 		}
 
 		final Bundle extras = intent.getExtras();
+
 
 		final int uid = extras.getInt(EXTRA_APP_UID, -1);
 		final String ports = extras.getString(EXTRA_PORTS, null);
@@ -137,24 +137,28 @@ public class NetworkRecorderService extends Service {
 		return SysUtils.hasRoot(this);
 	}
 
-	protected boolean startRecording(final int uid, final String ports) {
-		final Intent logViewIntent = new Intent(this, LogView.class);
+	protected Notification createNotification() {
+		final Intent logViewIntent = new Intent(this, LogViewActivity.class);
 		logViewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-		final Intent stopLogIntent = new Intent(this, LogView.class);
+		final Intent stopLogIntent = new Intent(this, LogViewActivity.class);
 		stopLogIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		stopLogIntent.putExtra("KillLog", true);
+		stopLogIntent.putExtra("KillService", true);
 
-		notification = new Notification.Builder(this)
+		return new Notification.Builder(this)
 				.setContentTitle(getString(R.string.app_name))
 				.setContentText(getString(R.string.notification_text))
 				.setTicker(getString(R.string.notification_ticker))
 				.setSmallIcon(R.drawable.arrow_page)
 				.setWhen(System.currentTimeMillis())
 				.setContentIntent(PendingIntent.getActivity(this, 0, logViewIntent, 0))
-				.addAction(android.R.drawable.ic_delete, "Kill Log", PendingIntent.getActivity(this, 0, stopLogIntent, 0))
+				.addAction(android.R.drawable.ic_delete, "Kill Log", PendingIntent.getActivity(this, 1, stopLogIntent, 0))
 				.setOngoing(true)
 				.build();
+	}
+
+	protected boolean startRecording(final int uid, final String ports) {
+		notification = createNotification();
 
 		startForeground(NOTIFICATION_ID, notification);
 
