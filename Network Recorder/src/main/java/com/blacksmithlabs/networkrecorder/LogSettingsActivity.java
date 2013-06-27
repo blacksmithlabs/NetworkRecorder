@@ -5,25 +5,32 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.ToggleButton;
+
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * Created by brian on 6/25/13.
  */
 public class LogSettingsActivity extends FragmentActivity {
-	final public static String EXTRA_APP = "LogSettings.app";
+	public static final String EXTRA_APP = "LogSettings.app";
 
-	final protected static String TITLE_FRAGMENT_TAG = "LogSettings.TitleFragment";
-	final protected static String PORT_FRAGMNET_TAG = "LogSettings.PortFragment";
-	final protected static String PORT_FRAGMENT_COUNT = "LoggetSettings.PortCount";
+	protected static final String PORT_FRAGMENT_TAG = "LogSettings.PortFragment";
+	protected static final String PORT_FRAGMENT_COUNT = "LogSettings.PortCount";
 
 	protected ApplicationHelper.DroidApp app;
 
@@ -57,23 +64,18 @@ public class LogSettingsActivity extends FragmentActivity {
 
 		final FragmentManager fragmentManager = getSupportFragmentManager();
 
+		titleFragment = (AppTitleFragment)fragmentManager.findFragmentById(R.id.settings_app_fragment);
+
 		// If we are not resuming, populate the fragments
 		if (savedInstanceState == null) {
-			titleFragment = new AppTitleFragment();
-			fragmentManager.beginTransaction()
-					.add(R.id.settings_app_container, titleFragment, TITLE_FRAGMENT_TAG)
-					.commit();
-
 			_addPortFragment(null);
 		} else {
-			titleFragment = (AppTitleFragment)fragmentManager.findFragmentByTag(TITLE_FRAGMENT_TAG);
-
 			final int portCount = savedInstanceState.getInt(PORT_FRAGMENT_COUNT, 0);
 			if (portCount <= 0) {
 				_addPortFragment(null);
 			} else {
 				for (int i=0; i<portCount; i++) {
-					portSelectors.add((PortSelectorFragment)fragmentManager.findFragmentByTag(PORT_FRAGMNET_TAG + i));
+					portSelectors.add((PortSelectorFragment)fragmentManager.findFragmentByTag(PORT_FRAGMENT_TAG + i));
 				}
 			}
 		}
@@ -94,14 +96,37 @@ public class LogSettingsActivity extends FragmentActivity {
 	}
 
 	public void onRecordToggleClicked(View view) {
-		// TODO load the log activity and give it all the settings so it can start the service and such
+		final ToggleButton toggle = (ToggleButton)view;
+		if (toggle.isChecked()) {
+			HashSet<Integer> ports = new HashSet<Integer>(portSelectors.size());
+			for (PortSelectorFragment portFrag : portSelectors) {
+				int port = portFrag.getPort();
+				if (port >= 0) {
+					ports.add(port);
+				}
+			}
+
+			// No valid ports found
+			if (ports.isEmpty()) {
+				MessageBox.alert(this, getString(R.string.settings_no_ports));
+				toggle.setChecked(false);
+				return;
+			}
+
+			final Intent logIntent = new Intent(this, LogViewActivity.class);
+			logIntent.putExtra(LogViewActivity.EXTRA_APP, app);
+			logIntent.putExtra(LogViewActivity.EXTRA_PORTS, new ArrayList<Integer>(ports));
+			logIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			startActivity(logIntent);
+			finish();
+		}
 	}
 
 	public void _addPortFragment(String port) {
 		final PortSelectorFragment fragment = new PortSelectorFragment();
 		portSelectors.add(fragment);
 
-		final String fragmentTag = PORT_FRAGMNET_TAG + portSelectors.size();
+		final String fragmentTag = PORT_FRAGMENT_TAG + portSelectors.size();
 
 		getSupportFragmentManager().beginTransaction()
 				.add(R.id.settings_ports_container, fragment, fragmentTag)
@@ -164,12 +189,50 @@ public class LogSettingsActivity extends FragmentActivity {
 				}
 			});
 
+			final EditText text = (EditText)view.findViewById(R.id.port);
+			// If we're creating it new, request focus
 			if (savedInstanceState == null) {
-				final TextView text = (TextView)view.findViewById(R.id.port);
 				text.requestFocus(TextView.FOCUS_DOWN);
 			}
+			// Force input to only valid ranges
+			List<InputFilter> filters = new ArrayList<InputFilter>(Arrays.asList(text.getFilters()));
+			filters.add(new InputFilter() {
+				@Override
+				public CharSequence filter(CharSequence charSequence, int start, int end, Spanned spanned, int dstart, int dend) {
+					try {
+						final int input = Integer.parseInt(charSequence.toString() + spanned.toString());
+						// Unsigned short, max value of 2^16
+						if (input >= 0 && input <= 65535) {
+							return null;
+						}
+					} catch (NumberFormatException ex) {
+						// That's awkward. Android broke...
+					}
+
+					return "";
+				}
+			});
+			text.setFilters(filters.toArray(new InputFilter[]{}));
 
 			return view;
+		}
+
+		/**
+		 * Get the selected port. -1 for invalid/empty ports
+		 * @return
+		 */
+		public int getPort() {
+			final EditText portText = (EditText)getView().findViewById(R.id.port);
+			final String value = portText.getText().toString();
+			if (value != null && !value.isEmpty()) {
+				try {
+					return Integer.parseInt(value);
+				} catch (NumberFormatException ex) {
+					// That's awkward. Android broke...
+				}
+			}
+
+			return -1;
 		}
 	}
 }

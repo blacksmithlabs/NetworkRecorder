@@ -15,6 +15,7 @@
     <string name="notification_text">Touch to view log</string>
     <string name="notification_ticker">Recording application traffic</string>
     <string name="settings_record_ports">Record application traffic on the following ports:</string>
+    <string name="settings_no_ports">No valid ports were found. Please input valid ports.</string>
     <string name="error_title">Network Recorder Error</string>
     <string name="error_noroot">Network Recorder requires root/superuser access</string>
     <string name="error_settings_noapp">No app was specified, please try again</string>

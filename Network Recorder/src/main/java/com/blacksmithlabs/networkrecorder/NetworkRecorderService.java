@@ -14,6 +14,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by brian on 6/24/13.
@@ -87,9 +88,8 @@ public class NetworkRecorderService extends Service {
 
 		final Bundle extras = intent.getExtras();
 
-
 		final int uid = extras.getInt(EXTRA_APP_UID, -1);
-		final String ports = extras.getString(EXTRA_PORTS, null);
+		final ArrayList<Integer> ports = extras.getIntegerArrayList(EXTRA_PORTS);
 
 		if (uid == -1 || ports == null || ports.isEmpty()) {
 			Log.e("NetworkRecorder", "[service] Invalid arguments. No app or ports specified.");
@@ -157,7 +157,7 @@ public class NetworkRecorderService extends Service {
 				.build();
 	}
 
-	protected boolean startRecording(final int uid, final String ports) {
+	protected boolean startRecording(final int uid, final List<Integer> ports) {
 		notification = createNotification();
 
 		startForeground(NOTIFICATION_ID, notification);

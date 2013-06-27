@@ -1,7 +1,6 @@
 package com.blacksmithlabs.networkrecorder;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +10,10 @@ import android.widget.Toast;
  * Created by brian on 6/24/13.
  */
 public class LogViewActivity extends Activity {
+	public static final String EXTRA_APP = "LogView.app";
+	public static final String EXTRA_PORTS = "LogView.ports";
+
+
 	public static final String EXTRA_LOG_INFO = "LogViewActivity.info";
 	public static final String EXTRA_KILL_SERVICE = "LogViewActivity.killService";
 
@@ -19,7 +22,7 @@ public class LogViewActivity extends Activity {
 
 		setContentView(R.layout.activity_log_view);
 
-		// Service interactions...
+		// Service interactions...?
 	}
 
 	@Override
@@ -28,7 +31,9 @@ public class LogViewActivity extends Activity {
 
 		Intent intent = getIntent();
 		if (intent != null) {
-			Log.d("NetworkRecorder", "KillService Intent: " + intent.getBooleanExtra("KillService", false));
+			Log.e("NetworkRecorder", "KillService Intent: " + intent.getBooleanExtra("KillService", false));
+			Log.e("NetworkRecorder", "App Intent: " + intent.getParcelableExtra(EXTRA_APP));
+			Log.e("NetworkRecorder", "App Ports: " + intent.getIntegerArrayListExtra(EXTRA_PORTS));
 		}
 
 		// TODO remove this and implement this activity
@@ -51,10 +56,5 @@ public class LogViewActivity extends Activity {
 	protected void stopService() {
 		// TODO unbind from service
 		stopService(new Intent(this, NetworkRecorderService.class));
-	}
-
-	public static final class LogSettings {
-		public int uid;
-		public String ports;
 	}
 }

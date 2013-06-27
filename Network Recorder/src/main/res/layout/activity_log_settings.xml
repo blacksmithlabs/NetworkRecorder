@@ -11,19 +11,20 @@
                   android:paddingTop="5dip"
                   android:paddingBottom="5dip">
 
-        <FrameLayout android:id="@+id/settings_app_container"
-                     android:orientation="vertical"
-                     android:layout_width="wrap_content"
-                     android:layout_height="wrap_content"
-                     android:layout_alignParentLeft="true" />
+        <fragment android:name="com.blacksmithlabs.networkrecorder.LogSettingsActivity$AppTitleFragment"
+                  android:id="@+id/settings_app_fragment"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_alignParentLeft="true"
+                  android:layout_toLeftOf="@+id/toggle_logging" />
 
         <ToggleButton android:id="@+id/toggle_logging"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:layout_alignParentRight="true"
                       android:textOn="@string/recording_on"
                       android:textOff="@string/recording_off"
-                      android:onClick="onRecordToggleClicked" />
+                      android:onClick="onRecordToggleClicked"
+                      android:layout_alignParentRight="true" />
 
     </RelativeLayout>
 

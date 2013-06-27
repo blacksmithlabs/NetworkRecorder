@@ -10,6 +10,7 @@
               android:layout_width="100dip"
               android:layout_height="wrap_content"
               android:inputType="number"
+              android:numeric="integer"
               android:maxLength="5" />
 
     <ImageView android:id="@+id/add_port"
