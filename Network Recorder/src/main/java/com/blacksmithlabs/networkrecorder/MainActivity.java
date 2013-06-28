@@ -2,10 +2,7 @@ package com.blacksmithlabs.networkrecorder;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.*;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.PagerTabStrip;
 import android.support.v4.view.PagerTitleStrip;
@@ -13,6 +10,7 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 
 import java.util.ArrayList;
@@ -37,11 +35,11 @@ public class MainActivity extends FragmentActivity {
 	    tabs.setTabIndicatorColor(getResources().getColor(android.R.color.holo_blue_dark));
     }
 
-	private List<Fragment> getFragments() {
-		final List<Fragment> fragments = new ArrayList<Fragment>();
+	@Override
+	protected void onResume() {
+		super.onResume();
 
-		final ApplicationListFragment appListFragment = new ApplicationListFragment();
-		appListFragment.setAppClickListener(new ApplicationListFragment.OnAppClickListener() {
+		ApplicationListFragment.addClickListener(MainActivity.class.getName(), new ApplicationListFragment.OnAppClickListener() {
 			@Override
 			public void onAppClick(ApplicationHelper.DroidApp app) {
 				Intent settings = new Intent(MainActivity.this, LogSettingsActivity.class);
@@ -54,16 +52,25 @@ public class MainActivity extends FragmentActivity {
 				return false;
 			}
 		});
-		fragments.add(appListFragment);
 
-		final LogListFragment logListFragment = new LogListFragment();
-		// TODO click handler? Or do we want that in the fragment?
-		fragments.add(logListFragment);
+		// TODO click handler for logListFragment? Or do we want that in the fragment?
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		ApplicationListFragment.removeClickListener(MainActivity.class.getName());
+	}
+
+	private List<Fragment> getFragments() {
+		final List<Fragment> fragments = new ArrayList<Fragment>();
+		fragments.add(new ApplicationListFragment());
+		fragments.add(new LogListFragment());
 
 		return fragments;
 	}
 
-	private class MainPageAdapter extends FragmentPagerAdapter {
+	private class MainPageAdapter extends FragmentStatePagerAdapter {
 		final private List<Fragment> fragments;
 
 		public MainPageAdapter(FragmentManager fm, List<Fragment> fragments) {

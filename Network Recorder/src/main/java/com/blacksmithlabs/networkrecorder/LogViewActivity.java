@@ -5,6 +5,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
+import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
+import com.blacksmithlabs.networkrecorder.helpers.SysUtils;
+
+import java.util.ArrayList;
 
 /**
  * Created by brian on 6/24/13.
@@ -12,49 +17,111 @@ import android.widget.Toast;
 public class LogViewActivity extends Activity {
 	public static final String EXTRA_APP = "LogView.app";
 	public static final String EXTRA_PORTS = "LogView.ports";
+	public static final String EXTRA_START = "LogView.start";
+	public static final String EXTRA_LOG_FILE = "LogView.logFile";
+	public static final String EXTRA_KILL_SERVICE = "LogView.killService";
 
+	public static boolean isBound = false;
 
-	public static final String EXTRA_LOG_INFO = "LogViewActivity.info";
-	public static final String EXTRA_KILL_SERVICE = "LogViewActivity.killService";
+	protected ApplicationHelper.DroidApp app;
+	protected ArrayList<Integer> ports;
+	protected String logFile;
+	protected boolean newLogRequest = false;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.activity_log_view);
 
-		// Service interactions...?
+		if (savedInstanceState != null) {
+			app = savedInstanceState.getParcelable(EXTRA_APP);
+			ports = savedInstanceState.getIntegerArrayList(EXTRA_PORTS);
+			logFile = savedInstanceState.getString(EXTRA_LOG_FILE);
+		} else {
+			final Intent intent = getIntent();
+			if (intent != null) {
+				if (intent.getBooleanExtra(EXTRA_KILL_SERVICE, false)) {
+					stopService();
+				}
+
+				app = intent.getParcelableExtra(EXTRA_APP);
+				if (app == null) {
+					MessageBox.error(this, getString(R.string.error_settings_noapp));
+					finish();
+				}
+
+				newLogRequest = intent.getBooleanExtra(EXTRA_START, false);
+				if (newLogRequest) {
+					ports = intent.getIntegerArrayListExtra(EXTRA_PORTS);
+					if (ports == null || ports.isEmpty()) {
+						MessageBox.error(this, getString(R.string.settings_no_ports));
+						finish();
+					}
+
+					// Our new log file
+					logFile = app.appinfo.packageName + "." + System.currentTimeMillis() + ".log";
+				} else {
+					logFile = intent.getStringExtra(EXTRA_LOG_FILE);
+				}
+			}
+		}
+
+		// Service interactions...
+		if (SysUtils.isServiceRunning(this, NetworkRecorderService.class.getName())) {
+			// If we are resuming, rebind to the service
+			if (!newLogRequest) {
+				bindService();
+			} else {
+				unbindService();
+			}
+		} else if (newLogRequest) {
+			startService();
+		}
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putParcelable(EXTRA_APP, app);
+		outState.putIntegerArrayList(EXTRA_PORTS, ports);
+		outState.putString(EXTRA_LOG_FILE, logFile);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-		Intent intent = getIntent();
+		final Intent intent = getIntent();
 		if (intent != null) {
-			Log.e("NetworkRecorder", "KillService Intent: " + intent.getBooleanExtra("KillService", false));
-			Log.e("NetworkRecorder", "App Intent: " + intent.getParcelableExtra(EXTRA_APP));
-			Log.e("NetworkRecorder", "App Ports: " + intent.getIntegerArrayListExtra(EXTRA_PORTS));
+			/* @@ */
+			Log.e("NetworkRecorder", "Kill Service: " + intent.getBooleanExtra(EXTRA_KILL_SERVICE, false));
+			/* ## */
+			if (intent.getBooleanExtra(EXTRA_KILL_SERVICE, false)) {
+				stopService();
+			}
 		}
+	}
 
-		// TODO remove this and implement this activity
-		Toast.makeText(this, "Killing service", Toast.LENGTH_SHORT).show();
-		final Intent serviceIntent = new Intent(this, NetworkRecorderService.class);
-		stopService(serviceIntent);
+	protected void bindService() {
+		// TODO implement
+	}
+
+	protected void unbindService() {
+		// TODO implement
 	}
 
 	protected void startService() {
-		/*
 		final Intent startService = new Intent(this, NetworkRecorderService.class);
 		startService.putExtra(NetworkRecorderService.EXTRA_APP_UID, app.uid);
-		startService.putExtra(NetworkRecorderService.EXTRA_PORTS, "80|8080");
+		startService.putExtra(NetworkRecorderService.EXTRA_PORTS, ports);
+		startService.putExtra(NetworkRecorderService.EXTRA_LOG_FILE, logFile);
 		startService(startService);
-		*/
 
-		// TODO bind to service
+		bindService();
 	}
 
 	protected void stopService() {
-		// TODO unbind from service
+		unbindService();
 		stopService(new Intent(this, NetworkRecorderService.class));
 	}
 }

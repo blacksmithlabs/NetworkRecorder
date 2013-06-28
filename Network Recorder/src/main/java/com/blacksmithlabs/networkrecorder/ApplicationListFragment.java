@@ -3,6 +3,7 @@ package com.blacksmithlabs.networkrecorder;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,8 +11,7 @@ import android.widget.*;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 /**
  * Created by brian on 6/22/13.
@@ -20,9 +20,29 @@ public class ApplicationListFragment extends Fragment
 		implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener,
 				ApplicationHelper.ApplicationHandler {
 
-	private ListView appListView;
+	/**
+	 * Our list of click handlers. Manage this properly if the fragment is ever going to be reused
+	 */
+	final private static Map<String, OnAppClickListener> clickListeners = new HashMap<String, OnAppClickListener>();
 
-	private OnAppClickListener clickListener = null;
+	/**
+	 * Add a new click handler to the fragment
+	 * @param name
+	 * @param listener
+	 */
+	public static void addClickListener(String name, OnAppClickListener listener) {
+		clickListeners.put(name, listener);
+	}
+
+	/**
+	 * Remove a click handler from the fragment
+	 * @param name
+	 */
+	public static void removeClickListener(String name) {
+		clickListeners.remove(name);
+	}
+
+	private ListView appListView;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -36,8 +56,8 @@ public class ApplicationListFragment extends Fragment
 
 		if (appListView == null) {
 			appListView = (ListView)getView().findViewById(R.id.application_list);
-			appListView.setOnItemClickListener(this);
 		}
+		appListView.setOnItemClickListener(this);
 
 		ApplicationHelper.loadApps(getActivity(), this, true);
 	}
@@ -110,10 +130,6 @@ public class ApplicationListFragment extends Fragment
 		MessageBox.alert(getActivity(), errorMessage);
 	}
 
-	public void setAppClickListener(OnAppClickListener listener) {
-		clickListener = listener;
-	}
-
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 		view.setSelected(true);
@@ -121,18 +137,22 @@ public class ApplicationListFragment extends Fragment
 		ListEntry entry = (ListEntry)view.getTag();
 		entry.app.selected = true;
 
-		if (clickListener != null) {
-			clickListener.onAppClick(entry.app);
+		for (OnAppClickListener clickListener : clickListeners.values()) {
+			if (clickListener != null) {
+				clickListener.onAppClick(entry.app);
+			}
 		}
 	}
 
 	@Override
 	public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-		if (clickListener != null) {
-			ListEntry entry = (ListEntry)view.getTag();
-			if (clickListener.onAppLongClick(entry.app)) {
-				entry.app.selected = true;
-				return true;
+		for (OnAppClickListener clickListener : clickListeners.values()) {
+			if (clickListener != null) {
+				ListEntry entry = (ListEntry)view.getTag();
+				if (clickListener.onAppLongClick(entry.app)) {
+					entry.app.selected = true;
+					return true;
+				}
 			}
 		}
 		return false;

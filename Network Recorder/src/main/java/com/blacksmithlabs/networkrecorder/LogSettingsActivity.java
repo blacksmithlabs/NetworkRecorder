@@ -114,6 +114,7 @@ public class LogSettingsActivity extends FragmentActivity {
 			}
 
 			final Intent logIntent = new Intent(this, LogViewActivity.class);
+			logIntent.putExtra(LogViewActivity.EXTRA_START, true);
 			logIntent.putExtra(LogViewActivity.EXTRA_APP, app);
 			logIntent.putExtra(LogViewActivity.EXTRA_PORTS, new ArrayList<Integer>(ports));
 			logIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -123,7 +124,10 @@ public class LogSettingsActivity extends FragmentActivity {
 	}
 
 	public void _addPortFragment(String port) {
-		final PortSelectorFragment fragment = new PortSelectorFragment();
+		final Bundle args = new Bundle();
+		args.putString("Port", port);
+
+		final PortSelectorFragment fragment = (PortSelectorFragment)Fragment.instantiate(this, PortSelectorFragment.class.getName(), args);
 		portSelectors.add(fragment);
 
 		final String fragmentTag = PORT_FRAGMENT_TAG + portSelectors.size();
@@ -166,6 +170,14 @@ public class LogSettingsActivity extends FragmentActivity {
 	}
 
 	public static class PortSelectorFragment extends Fragment {
+		protected String defaultPort = "";
+
+		@Override
+		public void onCreate(Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			defaultPort = getArguments() != null ? getArguments().getString("Port", "") : "";
+		}
+
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 			super.onCreateView(inflater, container, savedInstanceState);
@@ -193,6 +205,9 @@ public class LogSettingsActivity extends FragmentActivity {
 			// If we're creating it new, request focus
 			if (savedInstanceState == null) {
 				text.requestFocus(TextView.FOCUS_DOWN);
+			}
+			if (!defaultPort.isEmpty()) {
+				text.setText(defaultPort);
 			}
 			// Force input to only valid ranges
 			List<InputFilter> filters = new ArrayList<InputFilter>(Arrays.asList(text.getFilters()));

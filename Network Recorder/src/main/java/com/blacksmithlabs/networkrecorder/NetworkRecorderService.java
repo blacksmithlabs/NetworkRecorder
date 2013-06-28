@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.*;
 import android.util.Log;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
@@ -27,6 +28,7 @@ public class NetworkRecorderService extends Service {
 
 	public static final String EXTRA_APP_UID = "NetworkRecorderService.uid";
 	public static final String EXTRA_PORTS = "NetworkRecorderService.ports";
+	public static final String EXTRA_LOG_FILE = "NetworkRecorderService.logFile";
 
 	public static NetworkRecorderService instance;
 	public static Handler handler;
@@ -96,9 +98,12 @@ public class NetworkRecorderService extends Service {
 			return Service.START_NOT_STICKY;
 		}
 
-		final DateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-		final String date = df.format(new Date());
-		logFile =  date + ".pk.log";
+
+		logFile = extras.getString(EXTRA_LOG_FILE);
+		if (logFile == null || logFile.isEmpty()) {
+			final String date = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date());
+			logFile =  date + ".log";
+		}
 
 		new Thread(new Runnable() {
 			@Override
@@ -143,7 +148,7 @@ public class NetworkRecorderService extends Service {
 
 		final Intent stopLogIntent = new Intent(this, LogViewActivity.class);
 		stopLogIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		stopLogIntent.putExtra("KillService", true);
+		stopLogIntent.putExtra(LogViewActivity.EXTRA_KILL_SERVICE, true);
 
 		return new Notification.Builder(this)
 				.setContentTitle(getString(R.string.app_name))
@@ -151,8 +156,8 @@ public class NetworkRecorderService extends Service {
 				.setTicker(getString(R.string.notification_ticker))
 				.setSmallIcon(R.drawable.arrow_page)
 				.setWhen(System.currentTimeMillis())
-				.setContentIntent(PendingIntent.getActivity(this, 0, logViewIntent, 0))
-				.addAction(android.R.drawable.ic_delete, "Kill Log", PendingIntent.getActivity(this, 1, stopLogIntent, 0))
+				.setContentIntent(PendingIntent.getActivity(this, 0, logViewIntent, PendingIntent.FLAG_UPDATE_CURRENT))
+				.addAction(android.R.drawable.ic_delete, "Kill Log", PendingIntent.getActivity(this, 1, stopLogIntent, PendingIntent.FLAG_UPDATE_CURRENT))
 				.setOngoing(true)
 				.build();
 	}
