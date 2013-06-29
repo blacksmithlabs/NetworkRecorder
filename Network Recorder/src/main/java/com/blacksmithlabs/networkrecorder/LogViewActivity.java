@@ -1,8 +1,11 @@
 package com.blacksmithlabs.networkrecorder;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.*;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
@@ -69,17 +72,32 @@ public class LogViewActivity extends Activity {
 			}
 		}
 
-		// Service interactions...
-		if (SysUtils.isServiceRunning(this, NetworkRecorderService.class.getName())) {
-			// If we are resuming, rebind to the service
-			if (!newLogRequest) {
-				bindService();
-			} else {
-				unbindService();
+		// Spawn off our start up in a thread
+		final ProgressDialog progress = ProgressDialog.show(this, getString(R.string.loading), getString(R.string.log_initializing), true, true);
+		new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				boolean serviceRunning = SysUtils.isServiceRunning(LogViewActivity.this, NetworkRecorderService.class.getName());
+
+				try {
+					progress.dismiss();
+				} catch (Exception ex) {
+					// ...
+				}
+
+				// Service interactions...
+				if (serviceRunning) {
+					// If we are resuming, rebind to the service
+					if (!newLogRequest) {
+						bindService();
+					} else {
+						unbindService();
+					}
+				} else if (newLogRequest) {
+					startService();
+				}
 			}
-		} else if (newLogRequest) {
-			startService();
-		}
+		}.sendEmptyMessageDelayed(0, 100);
 	}
 
 	@Override
