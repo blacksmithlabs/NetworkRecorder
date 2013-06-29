@@ -45,18 +45,17 @@ public class LogViewActivity extends Activity {
 				newLogRequest = intent.getBooleanExtra(EXTRA_START, false);
 				if (newLogRequest) {
 					app = intent.getParcelableExtra(EXTRA_APP);
+					ports = intent.getIntegerArrayListExtra(EXTRA_PORTS);
+
+					String errorMessage = null;
 					if (app == null) {
-						MessageBox.error(this, getString(R.string.error_settings_noapp), new DialogInterface.OnDismissListener() {
-							@Override
-							public void onDismiss(DialogInterface dialogInterface) {
-								LogViewActivity.this.finish();
-							}
-						});
+						errorMessage = getString(R.string.error_settings_noapp);
+					} else if (ports == null || ports.isEmpty()) {
+						errorMessage = getString(R.string.settings_no_ports);
 					}
 
-					ports = intent.getIntegerArrayListExtra(EXTRA_PORTS);
-					if (ports == null || ports.isEmpty()) {
-						MessageBox.error(this, getString(R.string.settings_no_ports), new DialogInterface.OnDismissListener() {
+					if (errorMessage != null) {
+						MessageBox.error(this, errorMessage, new DialogInterface.OnDismissListener() {
 							@Override
 							public void onDismiss(DialogInterface dialogInterface) {
 								LogViewActivity.this.finish();
@@ -128,6 +127,7 @@ public class LogViewActivity extends Activity {
 
 	protected void stopService() {
 		unbindService();
+
 		stopService(new Intent(this, NetworkRecorderService.class));
 	}
 }

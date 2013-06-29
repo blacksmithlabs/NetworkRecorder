@@ -98,7 +98,6 @@ public class NetworkRecorderService extends Service {
 		}
 
 		final Bundle extras = intent.getExtras();
-
 		final int uid = extras.getInt(EXTRA_APP_UID, -1);
 		final ArrayList<Integer> ports = extras.getIntegerArrayList(EXTRA_PORTS);
 
@@ -107,16 +106,15 @@ public class NetworkRecorderService extends Service {
 			return Service.START_NOT_STICKY;
 		}
 
-
 		logFile = extras.getString(EXTRA_LOG_FILE);
 		if (logFile == null || logFile.isEmpty()) {
 			final String date = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date());
 			logFile =  date + ".log";
 		}
 
-		new Thread(new Runnable() {
+		new Handler() {
 			@Override
-			public void run() {
+			public void handleMessage(Message what) {
 				Log.d("NetworkRecorder", "[service] Starting: " + logFile);
 
 				if (!startRecording(uid, ports)) {
@@ -129,7 +127,7 @@ public class NetworkRecorderService extends Service {
 					});
 				}
 			}
-		}).start();
+		}.sendEmptyMessageDelayed(0, 100);
 
 		return Service.START_STICKY;
 	}
