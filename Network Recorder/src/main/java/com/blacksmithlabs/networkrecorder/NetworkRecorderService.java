@@ -33,6 +33,7 @@ public class NetworkRecorderService extends Service {
 	public static final String EXTRA_LOG_FILE = "NetworkRecorderService.logFile";
 
 	public static final String BROADCAST_KILL_SERVICE = "NetworkRecorderService.stop";
+	public static final String BROADCAST_EXTRA_VIEW_LOG = "NetworkRecorderService.viewLog";
 
 	public static NetworkRecorderService instance;
 	public static Handler handler;
@@ -157,6 +158,7 @@ public class NetworkRecorderService extends Service {
 		logViewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
 
 		final Intent stopLogIntent = new Intent(BROADCAST_KILL_SERVICE);
+		stopLogIntent.putExtra(BROADCAST_EXTRA_VIEW_LOG, true);
 
 		return new Notification.Builder(this)
 				.setContentTitle(getString(R.string.app_name))
@@ -187,10 +189,12 @@ public class NetworkRecorderService extends Service {
 	private class KillServiceReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			final Intent viewIntent = new Intent(NetworkRecorderService.this, LogViewActivity.class);
-			viewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-			viewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
-			getApplication().startActivity(viewIntent);
+			if (intent.getBooleanExtra(BROADCAST_EXTRA_VIEW_LOG, false)) {
+				final Intent viewIntent = new Intent(NetworkRecorderService.this, LogViewActivity.class);
+				viewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+				viewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
+				getApplication().startActivity(viewIntent);
+			}
 
 			NetworkRecorderService.this.stopSelf();
 		}
