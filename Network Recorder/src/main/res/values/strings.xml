@@ -23,5 +23,6 @@
     <string name="title_activity_log_settings">Recorder Configuration</string>
     <string name="recording_on">Recording Traffic</string>
     <string name="recording_off">Record Traffic</string>
+    <string name="recording_stop">Stop Recording</string>
 
 </resources>

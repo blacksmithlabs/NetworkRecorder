@@ -1,7 +1,7 @@
 package com.blacksmithlabs.networkrecorder;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.content.*;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -19,7 +19,6 @@ public class LogViewActivity extends Activity {
 	public static final String EXTRA_PORTS = "LogView.ports";
 	public static final String EXTRA_START = "LogView.start";
 	public static final String EXTRA_LOG_FILE = "LogView.logFile";
-	public static final String EXTRA_KILL_SERVICE = "LogView.killService";
 
 	public static boolean isBound = false;
 
@@ -40,22 +39,26 @@ public class LogViewActivity extends Activity {
 		} else {
 			final Intent intent = getIntent();
 			if (intent != null) {
-				if (intent.getBooleanExtra(EXTRA_KILL_SERVICE, false)) {
-					stopService();
-				}
-
-				app = intent.getParcelableExtra(EXTRA_APP);
-				if (app == null) {
-					MessageBox.error(this, getString(R.string.error_settings_noapp));
-					finish();
-				}
-
 				newLogRequest = intent.getBooleanExtra(EXTRA_START, false);
 				if (newLogRequest) {
+					app = intent.getParcelableExtra(EXTRA_APP);
+					if (app == null) {
+						MessageBox.error(this, getString(R.string.error_settings_noapp), new DialogInterface.OnDismissListener() {
+							@Override
+							public void onDismiss(DialogInterface dialogInterface) {
+								LogViewActivity.this.finish();
+							}
+						});
+					}
+
 					ports = intent.getIntegerArrayListExtra(EXTRA_PORTS);
 					if (ports == null || ports.isEmpty()) {
-						MessageBox.error(this, getString(R.string.settings_no_ports));
-						finish();
+						MessageBox.error(this, getString(R.string.settings_no_ports), new DialogInterface.OnDismissListener() {
+							@Override
+							public void onDismiss(DialogInterface dialogInterface) {
+								LogViewActivity.this.finish();
+							}
+						});
 					}
 
 					// Our new log file
@@ -85,21 +88,6 @@ public class LogViewActivity extends Activity {
 		outState.putParcelable(EXTRA_APP, app);
 		outState.putIntegerArrayList(EXTRA_PORTS, ports);
 		outState.putString(EXTRA_LOG_FILE, logFile);
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-
-		final Intent intent = getIntent();
-		if (intent != null) {
-			/* @@ */
-			Log.e("NetworkRecorder", "Kill Service: " + intent.getBooleanExtra(EXTRA_KILL_SERVICE, false));
-			/* ## */
-			if (intent.getBooleanExtra(EXTRA_KILL_SERVICE, false)) {
-				stopService();
-			}
-		}
 	}
 
 	protected void bindService() {

@@ -3,8 +3,10 @@ package com.blacksmithlabs.networkrecorder;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.*;
 import android.util.Log;
@@ -30,6 +32,8 @@ public class NetworkRecorderService extends Service {
 	public static final String EXTRA_PORTS = "NetworkRecorderService.ports";
 	public static final String EXTRA_LOG_FILE = "NetworkRecorderService.logFile";
 
+	public static final String BROADCAST_KILL_SERVICE = "NetworkRecorderService.stop";
+
 	public static NetworkRecorderService instance;
 	public static Handler handler;
 
@@ -41,6 +45,8 @@ public class NetworkRecorderService extends Service {
 
 	protected ArrayList<Messenger> clients = new ArrayList<Messenger>();
 	final private Messenger messenger = new Messenger(new IncomingHandler(this));
+
+	final private KillServiceReceiver killReceiver = new KillServiceReceiver();
 
 
 	@Override
@@ -70,6 +76,8 @@ public class NetworkRecorderService extends Service {
 
 		instance = this;
 		handler = new Handler();
+
+		registerReceiver(killReceiver, new IntentFilter(BROADCAST_KILL_SERVICE));
 	}
 
 	public IBinder onBind(Intent intent) {
@@ -129,6 +137,7 @@ public class NetworkRecorderService extends Service {
 	public void onDestroy() {
 		Log.d("NetworkRecorder", "[service] onDestroy");
 
+		unregisterReceiver(killReceiver);
 		stopForeground(true);
 		instance = null;
 		handler = null;
@@ -145,10 +154,9 @@ public class NetworkRecorderService extends Service {
 	protected Notification createNotification() {
 		final Intent logViewIntent = new Intent(this, LogViewActivity.class);
 		logViewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		logViewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
 
-		final Intent stopLogIntent = new Intent(this, LogViewActivity.class);
-		stopLogIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		stopLogIntent.putExtra(LogViewActivity.EXTRA_KILL_SERVICE, true);
+		final Intent stopLogIntent = new Intent(BROADCAST_KILL_SERVICE);
 
 		return new Notification.Builder(this)
 				.setContentTitle(getString(R.string.app_name))
@@ -157,7 +165,7 @@ public class NetworkRecorderService extends Service {
 				.setSmallIcon(R.drawable.arrow_page)
 				.setWhen(System.currentTimeMillis())
 				.setContentIntent(PendingIntent.getActivity(this, 0, logViewIntent, PendingIntent.FLAG_UPDATE_CURRENT))
-				.addAction(android.R.drawable.ic_delete, "Kill Log", PendingIntent.getActivity(this, 1, stopLogIntent, PendingIntent.FLAG_UPDATE_CURRENT))
+				.addAction(android.R.drawable.ic_delete, getString(R.string.recording_stop), PendingIntent.getBroadcast(this, 0, stopLogIntent, 0))
 				.setOngoing(true)
 				.build();
 	}
@@ -176,6 +184,17 @@ public class NetworkRecorderService extends Service {
 		// TODO implement
 	}
 
+	private class KillServiceReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final Intent viewIntent = new Intent(NetworkRecorderService.this, LogViewActivity.class);
+			viewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+			viewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
+			getApplication().startActivity(viewIntent);
+
+			NetworkRecorderService.this.stopSelf();
+		}
+	}
 
 	private class IncomingHandler extends Handler {
 		final private Context context;
