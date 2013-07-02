@@ -1,4 +1,4 @@
-package com.blacksmithlabs.networkrecorder;
+package com.blacksmithlabs.networkrecorder.fragments;
 
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
+import com.blacksmithlabs.networkrecorder.LogListAdapter;
+import com.blacksmithlabs.networkrecorder.R;
 import com.blacksmithlabs.networkrecorder.helpers.LogHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 

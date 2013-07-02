@@ -1,4 +1,4 @@
-package com.blacksmithlabs.networkrecorder;
+package com.blacksmithlabs.networkrecorder.fragments;
 
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+import com.blacksmithlabs.networkrecorder.R;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 

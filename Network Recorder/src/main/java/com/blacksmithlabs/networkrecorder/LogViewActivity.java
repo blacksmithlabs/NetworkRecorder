@@ -3,9 +3,8 @@ package com.blacksmithlabs.networkrecorder;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.*;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+import android.os.*;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.widget.Toast;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
@@ -17,13 +16,16 @@ import java.util.ArrayList;
 /**
  * Created by brian on 6/24/13.
  */
-public class LogViewActivity extends Activity {
+public class LogViewActivity extends FragmentActivity {
 	public static final String EXTRA_APP = "LogView.app";
 	public static final String EXTRA_PORTS = "LogView.ports";
 	public static final String EXTRA_START = "LogView.start";
 	public static final String EXTRA_LOG_FILE = "LogView.logFile";
 
+	public static Messenger service = null;
+	public static Messenger messenger = null;
 	public static boolean isBound = false;
+	public static RecorderServiceConnection connection = new RecorderServiceConnection();
 
 	protected ApplicationHelper.DroidApp app;
 	protected ArrayList<Integer> ports;
@@ -108,11 +110,33 @@ public class LogViewActivity extends Activity {
 	}
 
 	protected void bindService() {
-		// TODO implement
+		if (isBound) {
+			Log.d("NetworkRecorder", "Already bound to service. Unbinding...");
+			unbindService();
+		}
+
+		messenger = new Messenger(new IncomingHandler());
+		bindService(new Intent(this, NetworkRecorderService.class), connection, 0);
 	}
 
 	protected void unbindService() {
-		// TODO implement
+		if (isBound && service != null) {
+			try {
+				final Message msg = Message.obtain(null, NetworkRecorderService.MSG_UNREGISTER_CLIENT);
+				msg.replyTo = messenger;
+				service.send(msg);
+			} catch (RemoteException ex) {
+				Log.e("NetworkRecorder", "RemoteException when unregistering with service", ex);
+			}
+
+			try {
+				unbindService(connection);
+			} catch (Exception ex) {
+				// Ignore...
+			} finally {
+				isBound = false;
+			}
+		}
 	}
 
 	protected void startService() {
@@ -123,11 +147,56 @@ public class LogViewActivity extends Activity {
 		startService(startService);
 
 		bindService();
+
+		// TODO subscribe to the service exit broadcast so we can handle the interface accordingly
+		// TODO make sure the header button is toggled on
 	}
 
 	protected void stopService() {
 		unbindService();
 
 		stopService(new Intent(this, NetworkRecorderService.class));
+
+		// TODO make sure the header button is toggled off
+	}
+
+	private class IncomingHandler extends Handler {
+		@Override
+		public void handleMessage(Message msg) {
+			Log.d("NetworkRecorder", "[client] Received message: " + msg);
+
+			switch (msg.what) {
+				case NetworkRecorderService.MSG_BROADCAST_PACKET:
+					// TODO handle the packet
+					break;
+
+				default:
+					super.handleMessage(msg);
+					break;
+			}
+		}
+	}
+
+	private static class RecorderServiceConnection implements ServiceConnection {
+		@Override
+		public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+			service = new Messenger(iBinder);
+			isBound = true;
+
+			// Register with the service
+			try {
+				final Message msg = Message.obtain(null, NetworkRecorderService.MSG_REGISTER_CLIENT);
+				msg.replyTo = messenger;
+				service.send(msg);
+			} catch (RemoteException ex) {
+				Log.e("NetworkRecorder", "RemoteException when registering with service", ex);
+			}
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName componentName) {
+			service = null;
+			isBound = false;
+		}
 	}
 }

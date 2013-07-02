@@ -3,14 +3,10 @@ package com.blacksmithlabs.networkrecorder;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.*;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.PagerTabStrip;
-import android.support.v4.view.PagerTitleStrip;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
-import android.view.Menu;
-import android.view.View;
-import android.view.ViewGroup;
+import com.blacksmithlabs.networkrecorder.fragments.ApplicationListFragment;
+import com.blacksmithlabs.networkrecorder.fragments.LogListFragment;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 
 import java.util.ArrayList;
