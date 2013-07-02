@@ -37,6 +37,7 @@
                   android:layout_height="wrap_content"
                   android:layout_alignParentRight="true"
                   android:textOn="@android:string/yes"
-                  android:textOff="@android:string/no" />
+                  android:textOff="@android:string/no"
+                  android:onClick="onAppHeaderToggleClicked" />
 
 </RelativeLayout>

@@ -26,5 +26,7 @@
     <string name="recording_stop">Stop Recording</string>
     <string name="log_initializing">Initializing log viewer</string>
     <string name="loading">Loading...</string>
+    <string name="prompt_stop_recording_title">Stop Recording?</string>
+    <string name="prompt_stop_recording_text">Are you sure you want to stop recording?</string>
 
 </resources>

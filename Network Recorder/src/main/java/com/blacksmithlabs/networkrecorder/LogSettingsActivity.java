@@ -1,5 +1,6 @@
 package com.blacksmithlabs.networkrecorder;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -15,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.blacksmithlabs.networkrecorder.fragments.AppActionHeaderFragment;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 
@@ -34,7 +36,7 @@ public class LogSettingsActivity extends FragmentActivity {
 
 	protected ApplicationHelper.DroidApp app;
 
-	protected AppTitleFragment titleFragment;
+	protected AppActionHeaderFragment titleFragment;
 	protected ArrayList<PortSelectorFragment> portSelectors;
 
 	@Override
@@ -64,7 +66,7 @@ public class LogSettingsActivity extends FragmentActivity {
 
 		final FragmentManager fragmentManager = getSupportFragmentManager();
 
-		titleFragment = (AppTitleFragment)fragmentManager.findFragmentById(R.id.settings_app_fragment);
+		titleFragment = (AppActionHeaderFragment)fragmentManager.findFragmentById(R.id.settings_app_fragment);
 
 		// If we are not resuming, populate the fragments
 		if (savedInstanceState == null) {
@@ -92,13 +94,13 @@ public class LogSettingsActivity extends FragmentActivity {
 	protected void onResume() {
 		super.onResume();
 
-		titleFragment.populateData(app);
+		titleFragment.populateAppData(app);
 	}
 
-	public void onRecordToggleClicked(View view) {
+	public void onAppHeaderToggleClicked(View view) {
 		final ToggleButton toggle = (ToggleButton)view;
 		if (toggle.isChecked()) {
-			HashSet<Integer> ports = new HashSet<Integer>(portSelectors.size());
+			final HashSet<Integer> ports = new HashSet<Integer>(portSelectors.size());
 			for (PortSelectorFragment portFrag : portSelectors) {
 				int port = portFrag.getPort();
 				if (port >= 0) {
@@ -150,22 +152,6 @@ public class LogSettingsActivity extends FragmentActivity {
 		// Don't let it become empty
 		if (portSelectors.isEmpty()) {
 			_addPortFragment(null);
-		}
-	}
-
-	public static class AppTitleFragment extends Fragment {
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-			super.onCreateView(inflater, container, savedInstanceState);
-			return inflater.inflate(R.layout.app_list_item, container, false);
-		}
-
-		public void populateData(ApplicationHelper.DroidApp app) {
-			final TextView text = (TextView)getView().findViewById(R.id.app_item_text);
-			final ImageView icon = (ImageView)getView().findViewById(R.id.app_item_icon);
-
-			text.setText(app.toString());
-			app.loadIcon(getActivity(), icon);
 		}
 	}
 

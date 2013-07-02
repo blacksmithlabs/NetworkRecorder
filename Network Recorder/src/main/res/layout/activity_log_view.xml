@@ -10,7 +10,8 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textOn="@string/recording_on"
-              android:textOff="@string/recording_off" />
+              android:textOff="@string/recording_off"
+              android:enabled="true" />
 
     <View android:layout_width="match_parent"
           android:layout_height="1dip"

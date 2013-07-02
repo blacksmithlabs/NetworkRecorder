@@ -23,6 +23,7 @@ public class AppActionHeaderFragment extends Fragment {
 	private boolean isAttached = false;
 	private CharSequence textOn = null;
 	private CharSequence textOff = null;
+	private boolean enabled = false;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -36,9 +37,7 @@ public class AppActionHeaderFragment extends Fragment {
 		if (textOff != null && textOff.length() > 0) {
 			toggle.setTextOff(textOff);
 		}
-		// TODO we don't know if this is checked or not. Make that an attribute
-		// TODO make sure the view properly invalidates with the new text items
-		toggle.setChecked(true);
+		toggle.setChecked(enabled);
 
 		return view;
 	}
@@ -49,6 +48,7 @@ public class AppActionHeaderFragment extends Fragment {
 
 		textOn = activity.getString(attrs.getAttributeResourceValue(androidns, "textOn", 0));
 		textOff = activity.getString(attrs.getAttributeResourceValue(androidns, "textOff", 0));
+		enabled = attrs.getAttributeBooleanValue(androidns, "enabled", false);
 	}
 
 	@Override

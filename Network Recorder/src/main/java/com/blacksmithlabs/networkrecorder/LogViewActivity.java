@@ -1,12 +1,17 @@
 package com.blacksmithlabs.networkrecorder;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.*;
 import android.os.*;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
+import android.widget.ToggleButton;
+import com.blacksmithlabs.networkrecorder.fragments.AppActionHeaderFragment;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 import com.blacksmithlabs.networkrecorder.helpers.SysUtils;
@@ -31,6 +36,7 @@ public class LogViewActivity extends FragmentActivity {
 	protected ArrayList<Integer> ports;
 	protected String logFile;
 	protected boolean newLogRequest = false;
+	protected AppActionHeaderFragment titleFragment;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -42,36 +48,46 @@ public class LogViewActivity extends FragmentActivity {
 			ports = savedInstanceState.getIntegerArrayList(EXTRA_PORTS);
 			logFile = savedInstanceState.getString(EXTRA_LOG_FILE);
 		} else {
+			String errorMessage = null;
+
 			final Intent intent = getIntent();
 			if (intent != null) {
+				app = intent.getParcelableExtra(EXTRA_APP);
+
 				newLogRequest = intent.getBooleanExtra(EXTRA_START, false);
 				if (newLogRequest) {
-					app = intent.getParcelableExtra(EXTRA_APP);
 					ports = intent.getIntegerArrayListExtra(EXTRA_PORTS);
 
-					String errorMessage = null;
 					if (app == null) {
 						errorMessage = getString(R.string.error_settings_noapp);
-					} else if (ports == null || ports.isEmpty()) {
+					} else {
+						// Our new log file
+						logFile = app.appinfo.packageName + "." + System.currentTimeMillis() + ".log";
+					}
+
+					if (ports == null || ports.isEmpty()) {
 						errorMessage = getString(R.string.settings_no_ports);
 					}
-
-					if (errorMessage != null) {
-						MessageBox.error(this, errorMessage, new DialogInterface.OnDismissListener() {
-							@Override
-							public void onDismiss(DialogInterface dialogInterface) {
-								LogViewActivity.this.finish();
-							}
-						});
-					}
-
-					// Our new log file
-					logFile = app.appinfo.packageName + "." + System.currentTimeMillis() + ".log";
 				} else {
 					logFile = intent.getStringExtra(EXTRA_LOG_FILE);
 				}
+			} else {
+				errorMessage = getString(R.string.error_settings_noapp);
+			}
+
+			// Initialization error
+			if (errorMessage != null) {
+				MessageBox.error(this, errorMessage, new DialogInterface.OnDismissListener() {
+					@Override
+					public void onDismiss(DialogInterface dialogInterface) {
+						LogViewActivity.this.finish();
+					}
+				});
+				return;
 			}
 		}
+
+		titleFragment = (AppActionHeaderFragment)getSupportFragmentManager().findFragmentById(R.id.app_header_fragment);
 
 		// Spawn off our start up in a thread
 		final ProgressDialog progress = ProgressDialog.show(this, getString(R.string.loading), getString(R.string.log_initializing), true, true);
@@ -102,11 +118,55 @@ public class LogViewActivity extends FragmentActivity {
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+
+		if (app != null) {
+			titleFragment.populateAppData(app);
+		}
+	}
+
+	@Override
+	protected void onDestroy() {
+		unbindService();
+	}
+
+	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		outState.putParcelable(EXTRA_APP, app);
 		outState.putIntegerArrayList(EXTRA_PORTS, ports);
 		outState.putString(EXTRA_LOG_FILE, logFile);
+	}
+
+	public void onAppHeaderToggleClicked(View view) {
+		final ToggleButton toggle = (ToggleButton)view;
+		if (toggle.isChecked()) {
+			startService();
+		} else {
+			promptStopService(toggle);
+		}
+	}
+
+	protected void promptStopService(final ToggleButton toggle) {
+		final AlertDialog.Builder prompt = new AlertDialog.Builder(this);
+
+		prompt.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					stopService();
+					toggle.setChecked(false);
+				}
+			})
+			.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					toggle.setChecked(true);
+				}
+			})
+			.setTitle(R.string.prompt_stop_recording_title)
+			.setMessage(R.string.prompt_stop_recording_text)
+			.show();
 	}
 
 	protected void bindService() {
@@ -120,13 +180,15 @@ public class LogViewActivity extends FragmentActivity {
 	}
 
 	protected void unbindService() {
-		if (isBound && service != null) {
-			try {
-				final Message msg = Message.obtain(null, NetworkRecorderService.MSG_UNREGISTER_CLIENT);
-				msg.replyTo = messenger;
-				service.send(msg);
-			} catch (RemoteException ex) {
-				Log.e("NetworkRecorder", "RemoteException when unregistering with service", ex);
+		if (isBound) {
+			if (service != null) {
+				try {
+					final Message msg = Message.obtain(null, NetworkRecorderService.MSG_UNREGISTER_CLIENT);
+					msg.replyTo = messenger;
+					service.send(msg);
+				} catch (RemoteException ex) {
+					Log.e("NetworkRecorder", "RemoteException when unregistering with service", ex);
+				}
 			}
 
 			try {

@@ -5,30 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <RelativeLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:paddingLeft="5dip"
-                  android:paddingRight="5dip"
-                  android:paddingTop="5dip"
-                  android:paddingBottom="5dip">
-
-        <fragment android:name="com.blacksmithlabs.networkrecorder.LogSettingsActivity$AppTitleFragment"
-                  android:id="@+id/settings_app_fragment"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:layout_alignParentLeft="true"
-                  android:layout_toLeftOf="@+id/toggle_logging" />
-
-        <ToggleButton android:id="@+id/toggle_logging"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:textOn="@string/recording_on"
-                      android:textOff="@string/recording_off"
-                      android:onClick="onRecordToggleClicked"
-                      android:layout_alignParentRight="true" />
-
-    </RelativeLayout>
+    <fragment android:name="com.blacksmithlabs.networkrecorder.fragments.AppActionHeaderFragment"
+              android:id="@+id/settings_app_fragment"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textOn="@string/recording_on"
+              android:textOff="@string/recording_off" />
 
     <View android:layout_width="match_parent"
           android:layout_height="1dip"
