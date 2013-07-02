@@ -1,15 +1,12 @@
 package com.blacksmithlabs.networkrecorder;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.*;
 import android.os.*;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 import com.blacksmithlabs.networkrecorder.fragments.AppActionHeaderFragment;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
@@ -37,6 +34,8 @@ public class LogViewActivity extends FragmentActivity {
 	protected String logFile;
 	protected boolean newLogRequest = false;
 	protected AppActionHeaderFragment titleFragment;
+
+	final private KillServiceReceiver killReceiver = new KillServiceReceiver();
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -89,6 +88,8 @@ public class LogViewActivity extends FragmentActivity {
 
 		titleFragment = (AppActionHeaderFragment)getSupportFragmentManager().findFragmentById(R.id.app_header_fragment);
 
+		registerReceiver(killReceiver, new IntentFilter(NetworkRecorderService.BROADCAST_KILL_SERVICE));
+
 		// Spawn off our start up in a thread
 		final ProgressDialog progress = ProgressDialog.show(this, getString(R.string.loading), getString(R.string.log_initializing), true, true);
 		new Handler() {
@@ -128,6 +129,7 @@ public class LogViewActivity extends FragmentActivity {
 
 	@Override
 	protected void onDestroy() {
+		unregisterReceiver(killReceiver);
 		unbindService();
 	}
 
@@ -167,6 +169,13 @@ public class LogViewActivity extends FragmentActivity {
 			.setTitle(R.string.prompt_stop_recording_title)
 			.setMessage(R.string.prompt_stop_recording_text)
 			.show();
+	}
+
+	protected void toggleHeaderButton(boolean checked) {
+		final View toggleView = findViewById(R.id.toggle_action);
+		if (toggleView != null) {
+			((ToggleButton)toggleView).setChecked(checked);
+		}
 	}
 
 	protected void bindService() {
@@ -209,17 +218,14 @@ public class LogViewActivity extends FragmentActivity {
 		startService(startService);
 
 		bindService();
-
-		// TODO subscribe to the service exit broadcast so we can handle the interface accordingly
-		// TODO make sure the header button is toggled on
+		toggleHeaderButton(true);
 	}
 
 	protected void stopService() {
+		toggleHeaderButton(false);
 		unbindService();
 
 		stopService(new Intent(this, NetworkRecorderService.class));
-
-		// TODO make sure the header button is toggled off
 	}
 
 	private class IncomingHandler extends Handler {
@@ -259,6 +265,13 @@ public class LogViewActivity extends FragmentActivity {
 		public void onServiceDisconnected(ComponentName componentName) {
 			service = null;
 			isBound = false;
+		}
+	}
+
+	private class KillServiceReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			toggleHeaderButton(false);
 		}
 	}
 }

@@ -1,6 +1,5 @@
 package com.blacksmithlabs.networkrecorder;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -196,7 +195,7 @@ public class LogSettingsActivity extends FragmentActivity {
 				text.setText(defaultPort);
 			}
 			// Force input to only valid ranges
-			List<InputFilter> filters = new ArrayList<InputFilter>(Arrays.asList(text.getFilters()));
+			final List<InputFilter> filters = new ArrayList<InputFilter>(Arrays.asList(text.getFilters()));
 			filters.add(new InputFilter() {
 				@Override
 				public CharSequence filter(CharSequence charSequence, int start, int end, Spanned spanned, int dstart, int dend) {

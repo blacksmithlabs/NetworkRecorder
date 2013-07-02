@@ -22,7 +22,7 @@ public class MessageBox {
 	}
 	public static void alert(Context ctx, CharSequence msg, CharSequence title, DialogInterface.OnDismissListener onDismiss) {
 		if (ctx != null) {
-			AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+			final AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
 			builder.setNeutralButton(android.R.string.ok, null)
 				.setMessage(msg);
 
