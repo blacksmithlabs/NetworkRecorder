@@ -1,3 +1,7 @@
 *.class
 .gradle/*
 Network Recorder/build/*
+Network Recorder/libs/armeabi*
+Network Recorder/libs/mips*
+Network Recorder/libs/x86*
+Network Recorder/obj*
