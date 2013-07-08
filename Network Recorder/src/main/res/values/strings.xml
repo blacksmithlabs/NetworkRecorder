@@ -19,6 +19,9 @@
     <string name="error_title">Network Recorder Error</string>
     <string name="error_noroot">Network Recorder requires root/superuser access</string>
     <string name="error_settings_noapp">No app was specified, please try again</string>
+    <string name="error_unsupported_system_title">Unsupported system</string>
+    <string name="error_unsupported_system_text">The CPU Type %1$s is currently not supported.</string>
+    <string name="error_installing_binary">Failed to install %1$s: %2$s</string>
     <string name="title_activity_log_view">Application Log</string>
     <string name="title_activity_log_settings">Recorder Configuration</string>
     <string name="recording_on">Recording Traffic</string>

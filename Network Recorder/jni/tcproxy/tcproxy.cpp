@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <errno.h>
+#include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,7 @@
 
 #define BUF_SIZE 4096
 
+FILE* logfile;
 char* remoteaddr;
 int remoteport;
 
@@ -130,11 +132,75 @@ int create_proxy(int client_sock) {
     return proxy_socket;
 }
 
-int socket_write(int socket, char* buf, int* len) {
+void write_hex(char* buf, int len) {
+    // 1 byte per line, 42 chars per line
+    // dddd  xx xx xx xx  xx xx xx xx  dddd dddd\n
+    int lines = (int)ceil(len/8.0);
+    int hexlen = lines * 42;
+
+    char* hex = new char[hexlen+1];
+
+    int bufpos = 0;
+    char* hexpos = hex;
+    for (int i=0;i<lines;i++) {
+        sprintf(hexpos, "%04X  ", i*8);
+        hexpos += 6;
+
+        int ploc = 25;
+        for (int b=0; b<8; b++) {
+            sprintf(hexpos, "%02X ", buf[bufpos]);
+            hexpos += 3;
+            ploc -= 2;
+
+            if (buf[bufpos] > 0x20 && buf[bufpos] < 0x7F) {
+                *(hexpos+ploc) = buf[bufpos];
+            } else {
+                *(hexpos+ploc) = '.';
+            }
+
+            if (b == 3) {
+                *(hexpos++) = ' ';
+                *(hexpos+ploc) = ' ';
+
+            } else if (b == 7) {
+                *(hexpos++) = ' ';
+            }
+
+            bufpos++;
+            if (bufpos >= len) {
+                for (int c=b+1; c<8; c++) {
+                    *(hexpos++) = ' ';
+                    *(hexpos++) = ' ';
+                    *(hexpos++) = ' ';
+                    ploc -= 3;
+                    if (c == 3) {
+                        *(hexpos++) = ' ';
+                        ploc--;
+                    }
+                }
+                *(hexpos++) = ' ';
+                break;
+            }
+        }
+
+        hexpos += ploc;
+        *(hexpos++) = '\n';
+    }
+    *hexpos = '\0';
+
+    fwrite(hex, sizeof(char), hexlen, logfile);
+    delete hex;
+}
+
+int socket_write(int socket, char* buf, int* len, bool isServer) {
     int written = write(socket, buf, *len);
     if (written <= 0) {
         return written;
     }
+
+    fprintf(logfile, "%s (%d) [%d]\n", (isServer ? "S>C" : "C>S"), socket, written);
+    write_hex(buf, written);
+
     if (written != *len) {
         memmove(buf, buf+written, (*len)-written);
     }
@@ -151,13 +217,13 @@ int service_client(int client_sock, int server_sock) {
 
     while (1) {
         if (cbo) {
-            if (socket_write(server_sock, cbuf, &cbo) < 0 && errno != EWOULDBLOCK) {
+            if (socket_write(server_sock, cbuf, &cbo, false) < 0 && errno != EWOULDBLOCK) {
                 syslog(LOG_ERR, "write %d: %s", server_sock, strerror(errno));
                 exit(1);
             }
         }
         if (sbo) {
-            if (socket_write(client_sock, sbuf, &sbo) < 0 && errno != EWOULDBLOCK) {
+            if (socket_write(client_sock, sbuf, &sbo, true) < 0 && errno != EWOULDBLOCK) {
                 syslog(LOG_ERR, "write: %d: %s", client_sock, strerror(errno));
                 exit(1);
             }
@@ -212,11 +278,16 @@ int main(int argc, char* argv[]) {
     int client, server;
     int master_sock;
 
-    if (1 != argc) {
-        fprintf(stderr, "usage: %s local_port\n", argv[0]);
+    if (argc != 3) {
+        fprintf(stderr, "usage: %s local_port log_file\n", argv[0]);
         exit(1);
     }
     int localport = atoi(argv[1]);
+    logfile = fopen(argv[2], "a");
+    if (logfile == NULL) {
+        fprintf(stderr, "log_file %s could not be opened\n", argv[2]);
+        exit(2);
+    }
 
     assert(localport > 0);
 
