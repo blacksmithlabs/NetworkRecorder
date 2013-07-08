@@ -42,28 +42,28 @@ public class SysUtils {
 			iptablesSize = 192261;
 			iptablesResId = R.raw.iptables_armv7;
 			tcproxyBin = "tcproxy_armv7";
-			tcproxySize = 13596;
+			tcproxySize = 13648;
 			tcproxyResId = R.raw.tcproxy_armv7;
 		} else if (cpu_abi.contains("armeabi")) {
 			iptablesBin = "iptables_armv5";
 			iptablesSize = 196304;
 			iptablesResId = R.raw.iptables_armv5;
 			tcproxyBin = "tcproxy_armv5";
-			tcproxySize = 17688;
+			tcproxySize = 17736;
 			tcproxyResId = R.raw.tcproxy_armv5;
 		} else if (cpu_abi.contains("x86")) {
 			iptablesBin = "iptables_x86";
 			iptablesSize = 295916;
 			iptablesResId = R.raw.iptables_x86;
 			tcproxyBin = "tcproxy_x86";
-			tcproxySize = 9536;
+			tcproxySize = 9588;
 			tcproxyResId = R.raw.tcproxy_x86;
 		} else if (cpu_abi.contains("mips")) {
 			iptablesBin = "iptables_mips";
 			iptablesSize = 361264;
 			iptablesResId = R.raw.iptables_mips;
 			tcproxyBin = "tcproxy_mips";
-			tcproxySize = 71072;
+			tcproxySize = 71088;
 			tcproxyResId = R.raw.tcproxy_mips;
 		} else {
 			iptablesBin = null;

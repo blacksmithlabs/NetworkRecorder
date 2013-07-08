@@ -4,7 +4,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
+#include <unistd.h>
 
 #include <arpa/inet.h>
 
@@ -39,16 +41,8 @@ void sigreap(int sig) {
 }
 
 int set_nonblock(int fd) {
-    int fl;
-    int x = fcntl(fd, F_GETFL, &fl);
-    if (x < 0) {
-        syslog(LOG_ERR, "fcntl F_GETFL: FD %d: %s", fd, strerror(errno));
-        exit(1);
-    }
-
-    fl |= O_NONBLOCK;
-    x = fcntl(fd, F_SETFL, &fl);
-    if (x < 0) {
+    int fl = fcntl(fd, F_GETFL, 0);
+    if (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0) {
         syslog(LOG_ERR, "fcntl F_SETFL: FD %d: %s", fd, strerror(errno));
         exit(1);
     }
@@ -56,7 +50,7 @@ int set_nonblock(int fd) {
 
 int create_server_sock(int port) {
     int addrlen, s, on = 1, x;
-    static struct sockaddr_in client_addr;
+    struct sockaddr_in client_addr;
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
@@ -67,7 +61,7 @@ int create_server_sock(int port) {
     addrlen = sizeof(client_addr);
     memset(&client_addr, '\0', addrlen);
     client_addr.sin_family = AF_INET;
-    client_addr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+    client_addr.sin_addr.s_addr = INADDR_ANY;
     client_addr.sin_port = htons(port);
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, 4);
     x = bind(s, (struct sockaddr*)&client_addr, addrlen);
@@ -86,34 +80,33 @@ int create_server_sock(int port) {
 }
 
 int wait_for_connection(int master_sock) {
-    static int newsock, len;
-    static struct sockaddr_in peer;
+    static socklen_t len = sizeof(struct sockaddr);
+    struct sockaddr_in peer;
 
-    len = sizeof(struct sockaddr);
-    newsock = accept(master_sock, (struct sockaddr*)&peer, &len);
+    int newsock = accept(master_sock, (struct sockaddr*)&peer, &len);
     if (newsock < 0) {
         if (errno != EINTR) {
             perror("accept");
         }
     }
 
-    // Where are we going?
-    remoteaddr = inet_ntoa(peer.sin_addr);
-    remoteport = ntohs(peer.sin_port);
-
     set_nonblock(newsock);
     return newsock;
 }
 
 int create_proxy(int client_sock) {
-    struct sockaddr_in server_socket;
-    int size = sizeof(server_socket);
+    struct sockaddr_in client_info;
+    int size = sizeof(client_info);
     int on = 1;
 
-    if (getsockopt(client_sock, SOL_IP, SO_ORIGINAL_DST, &server_socket, (socklen_t*)&size) < 0) {
+    if (getsockopt(client_sock, SOL_IP, SO_ORIGINAL_DST, &client_info, (socklen_t*)&size) < 0) {
         perror("Could not determine socket's original destination");
         return 0;
     }
+
+    // Where are we going?
+    remoteaddr = inet_ntoa(client_info.sin_addr);
+    remoteport = ntohs(client_info.sin_port);
 
     int proxy_socket  = socket(AF_INET, SOCK_STREAM, 0);
     if (proxy_socket < 0) {
@@ -122,7 +115,7 @@ int create_proxy(int client_sock) {
 
     setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR, &on, 4);
 
-    int ret = connect(proxy_socket, (struct sockaddr*)&server_socket, size);
+    int ret = connect(proxy_socket, (struct sockaddr*)&client_info, size);
     if (ret < 0) {
         close(proxy_socket);
         return ret;
@@ -133,22 +126,22 @@ int create_proxy(int client_sock) {
 }
 
 void write_hex(char* buf, int len) {
-    // 1 byte per line, 42 chars per line
-    // dddd  xx xx xx xx  xx xx xx xx  dddd dddd\n
+    // 8 bytes per line, 41 chars per line
+    // ddd  xx xx xx xx  xx xx xx xx  dddd dddd\n
     int lines = (int)ceil(len/8.0);
-    int hexlen = lines * 42;
+    int hexlen = lines * 41;
 
-    char* hex = new char[hexlen+1];
+    char* hex = new char[hexlen+2];
 
     int bufpos = 0;
     char* hexpos = hex;
     for (int i=0;i<lines;i++) {
-        sprintf(hexpos, "%04X  ", i*8);
-        hexpos += 6;
+        sprintf(hexpos, "%03X  ", i*8);
+        hexpos += 5;
 
         int ploc = 25;
         for (int b=0; b<8; b++) {
-            sprintf(hexpos, "%02X ", buf[bufpos]);
+            sprintf(hexpos, "%02X ", (unsigned char)buf[bufpos]);
             hexpos += 3;
             ploc -= 2;
 
@@ -176,9 +169,10 @@ void write_hex(char* buf, int len) {
                     if (c == 3) {
                         *(hexpos++) = ' ';
                         ploc--;
+                    } else if (c == 7) {
+                        *(hexpos++) = ' ';
                     }
                 }
-                *(hexpos++) = ' ';
                 break;
             }
         }
@@ -186,9 +180,10 @@ void write_hex(char* buf, int len) {
         hexpos += ploc;
         *(hexpos++) = '\n';
     }
+    *(hexpos++) = '\n';
     *hexpos = '\0';
 
-    fwrite(hex, sizeof(char), hexlen, logfile);
+    fwrite(hex, sizeof(char), hexpos-hex, logfile);
     delete hex;
 }
 
@@ -198,7 +193,7 @@ int socket_write(int socket, char* buf, int* len, bool isServer) {
         return written;
     }
 
-    fprintf(logfile, "%s (%d) [%d]\n", (isServer ? "S>C" : "C>S"), socket, written);
+    fprintf(logfile, "%s (%s:%d) [%d]\n", (isServer ? "S>C" : "C>S"), remoteaddr, remoteport, written);
     write_hex(buf, written);
 
     if (written != *len) {
@@ -283,7 +278,7 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     int localport = atoi(argv[1]);
-    logfile = fopen(argv[2], "a");
+    logfile = (strcmp(argv[2], "stdout") == 0) ? stdout : fopen(argv[2], "a");
     if (logfile == NULL) {
         fprintf(stderr, "log_file %s could not be opened\n", argv[2]);
         exit(2);
