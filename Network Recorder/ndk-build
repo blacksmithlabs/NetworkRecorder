@@ -9,26 +9,17 @@ $NDK_DIR/ndk-build
 
 if [ $? -eq 0 ]; then
 	declare -A PATHS='([armeabi]="armv5" [armeabi-v7a]="armv7" [mips]="mips" [x86]="x86")'
-	FILES=( 'iptables' 'tcproxy' )
+	FILES=( 'iptables' 'tcproxy' 'grep' )
 
 	for fpath in "${!PATHS[@]}"; do
 		suffix="${PATHS[$fpath]}"
 		for file in "${FILES[@]}"; do
 			dest="src/main/res/raw/${file}_${suffix}"
+			ls -l libs/$fpath/$file
 			cp libs/$fpath/$file $dest
 			rm ${dest}.zip
 			zip -r $dest $dest
 			rm $dest
 		done
 	done
-	
-	# Copy files if build successful
-	#cp libs/armeabi/iptables src/main/res/raw/iptables_armv5
-	#cp libs/armeabi/tcproxy src/main/res/raw/tcproxy_armv5
-	#cp libs/armeabi-v7a/iptables src/main/res/raw/iptables_armv7
-	#cp libs/armeabi-v7a/tcproxy src/main/res/raw/tcproxy_armv7
-	#cp libs/mips/iptables src/main/res/raw/iptables_mips
-	#cp libs/mips/tcproxy src/main/res/raw/tcproxy_mips
-	#cp libs/x86/iptables src/main/res/raw/iptables_x86
-	#cp libs/x86/tcproxy src/main/res/raw/tcproxy_x86
 fi

@@ -7,13 +7,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.Uri;
 import android.os.*;
 import android.util.Log;
+import com.blacksmithlabs.networkrecorder.helpers.IPTables;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 import com.blacksmithlabs.networkrecorder.helpers.SysUtils;
 
-import java.text.DateFormat;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,10 +23,13 @@ import java.util.List;
  * Created by brian on 6/24/13.
  */
 public class NetworkRecorderService extends Service {
+	public static final int LISTEN_PORT = 62312;
+
 	public static final int NOTIFICATION_ID = "Network Recorder Service".hashCode();
 	public static final int MSG_REGISTER_CLIENT = 1;
 	public static final int MSG_UNREGISTER_CLIENT = 2;
-	public static final int MSG_BROADCAST_PACKET = 3;
+	public static final int MSG_BROADCAST_LOG_LINE = 3;
+	public static final int MSG_BROADCAST_LOG_EXIT = 4;
 
 	public static final String EXTRA_APP_UID = "NetworkRecorderService.uid";
 	public static final String EXTRA_PORTS = "NetworkRecorderService.ports";
@@ -39,16 +42,17 @@ public class NetworkRecorderService extends Service {
 	public static Handler handler;
 
 	private static String logFile = null;
+	private static String logFilePath = null;
 	private static Notification notification;
 
 	private boolean hasRoot = false;
 	private boolean hasBinaries = false;
+	private LogReader logReader;
 
 	protected ArrayList<Messenger> clients = new ArrayList<Messenger>();
 	final private Messenger messenger = new Messenger(new IncomingHandler(this));
 
 	final private KillServiceReceiver killReceiver = new KillServiceReceiver();
-
 
 	@Override
 	public void onCreate() {
@@ -63,10 +67,9 @@ public class NetworkRecorderService extends Service {
 			hasRoot = true;
 		}
 
-		if (!SysUtils.installBinaries(this)) {
+		if (!SysUtils.installBinaries(NetworkRecorderService.this, true)) {
 			hasBinaries = false;
 			stopSelf();
-			return;
 		} else {
 			hasBinaries = true;
 		}
@@ -111,6 +114,8 @@ public class NetworkRecorderService extends Service {
 			final String date = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date());
 			logFile =  date + ".log";
 		}
+
+		logFilePath = (new File(getDir("run", Context.MODE_PRIVATE), logFile)).getAbsolutePath();
 
 		new Handler() {
 			@Override
@@ -170,18 +175,138 @@ public class NetworkRecorderService extends Service {
 				.build();
 	}
 
+	protected File getPIDFile() {
+		return new File(getDir("run", Context.MODE_PRIVATE), SysUtils.getTcproxyBin() + ".pid");
+	}
+
 	protected boolean startRecording(final int uid, final List<Integer> ports) {
 		notification = createNotification();
 
 		startForeground(NOTIFICATION_ID, notification);
 
-		// TODO finish implementing
+		try {
+			killLogger();
+			if (!IPTables.applyRules(this, uid, ports, false)) {
+				throw new Exception("iptables rules failed");
+			}
+			startLogger();
+		} catch (Exception ex) {
+			Log.e("NetworkRecorder", "Failed to start recording log data: " + ex.getMessage());
+			return false;
+		}
 
 		return true;
 	}
 
 	protected void stopRecording() {
-		// TODO implement
+		IPTables.removeRules(this);
+		killLogger();
+	}
+
+	protected String killLoggerScript() {
+		final String pidFilePath = getPIDFile().getAbsolutePath();
+
+		final StringBuilder script = new StringBuilder();
+		script.append("#Kill existing tcproxy\n\n")
+				.append("if [ -f ").append(pidFilePath).append(" ]; then\n")
+				.append("  PID=`cat ").append(pidFilePath).append("`\n")
+				.append("  if [ $PID ]; then\n")
+				.append("    kill $PID\n")
+				.append("  fi\n")
+				.append("  rm ").append(pidFilePath).append("\n")
+				.append("fi\n");
+
+		return script.toString();
+	}
+
+	protected void startLogger() throws FileNotFoundException {
+		final File pidFile = getPIDFile();
+		final String pidFilePath = pidFile.getAbsolutePath();
+		final String tcproxy = (new File(SysUtils.getBinDir(this), SysUtils.getTcproxyBin())).getAbsolutePath();
+
+		final StringBuilder script = new StringBuilder();
+		script.append(killLoggerScript())
+			.append("\n#Start tcproxy\n\n")
+			.append("touch ").append(logFilePath).append("\n")
+			.append(tcproxy).append(" ").append(LISTEN_PORT).append(" ").append(logFilePath).append(" &\n")
+			.append("echo $! > ").append(pidFilePath).append("\n")
+			.append("\n#Update permissions\n\n")
+			.append("chmod 666 ").append(logFilePath).append("\n")
+			.append("chmod 666 ").append(pidFilePath).append("\n");
+
+		final Integer appUid = SysUtils.getApplicationUID(this);
+		if (appUid != null) {
+			script.append("chown ")
+				.append(appUid).append(":").append(appUid)
+				.append(" ").append(logFilePath)
+				.append(" ").append(pidFilePath)
+				.append("\n");
+		}
+
+		// TODO we should really gather error information and error if this fails
+		/* @@ */
+		final File f = new File(getFilesDir().getAbsolutePath(), "tcproxy.sh");
+
+		try {
+			final PrintWriter scriptWriter = new PrintWriter(new BufferedWriter(new FileWriter(f)));
+			scriptWriter.println(script.toString());
+			scriptWriter.flush();
+			scriptWriter.close();
+		} catch (IOException ex) {
+			Log.e("NetworkRecorder", "Script 'tcproxy' creation error", ex);
+		}
+		/* ## */
+
+		// Start the proxy
+		SysUtils.executeScript(this, "tcproxy", script.toString(), true, true);
+
+		// Start the log tailer
+		try {
+			logReader = new LogReader();
+			new Thread(logReader, "tcproxy").start();
+		} catch (FileNotFoundException ex) {
+			logReader = null;
+			/* @@ */
+			Log.e("NetworkRecorder", "Failed to start logger thread: " + ex);
+			/* ## */
+			killLogger();
+
+			throw ex;
+		}
+	}
+
+	protected void killLogger() {
+		SysUtils.executeScript(this, "kill tcproxy", killLoggerScript(), true, true);
+
+		if (logReader != null) {
+			logReader.stopReading();
+		}
+		notifyLogExit();
+	}
+
+	protected void notifyLogLine(String line) {
+		for (int i=clients.size() - 1; i>=0; i--) {
+			try {
+				clients.get(i).send(Message.obtain(null, MSG_BROADCAST_LOG_LINE, line));
+			} catch (RemoteException ex) {
+				// This client is dead
+				clients.remove(i);
+			}
+		}
+	}
+
+	protected void notifyLogExit() {
+		/* @@ */
+		Log.d("NetworkRecorder", "Notifying Log Exit");
+		/* ## */
+		for (int i=clients.size() - 1; i>=0; i--) {
+			try {
+				clients.get(i).send(Message.obtain(null, MSG_BROADCAST_LOG_EXIT));
+			} catch (RemoteException ex) {
+				// This client is dead
+				clients.remove(i);
+			}
+		}
 	}
 
 	private class KillServiceReceiver extends BroadcastReceiver {
@@ -220,14 +345,65 @@ public class NetworkRecorderService extends Service {
 					clients.remove(msg.replyTo);
 					break;
 
-				case MSG_BROADCAST_PACKET:
-					Log.d("NetworkRecorder", "[service] got MSG_BROADCAST_PACKET unexpectedly");
+				case MSG_BROADCAST_LOG_LINE:
+					Log.d("NetworkRecorder", "[service] got MSG_BROADCAST_LOG_LINE unexpectedly");
+					break;
+
+				case MSG_BROADCAST_LOG_EXIT:
+					Log.d("NetworkRecorder", "[service] got MSG_BROADCAST_LOG_EXIT unexpectedly");
 					break;
 
 				default:
 					Log.d("NetworkRecorder", "[service] unhandled message");
 					super.handleMessage(msg);
 					break;
+			}
+		}
+	}
+
+	private class LogReader implements Runnable {
+		final private BufferedReader reader;
+		private boolean keepReading = true;
+
+		public LogReader() throws FileNotFoundException {
+			/* @@ */
+			Log.d("NetworkRecorder", "Initializing log reader");
+			/* ## */
+			reader = new BufferedReader(new FileReader(new File(logFilePath)));
+			/* @@ */
+			Log.d("NetworkRecorder", "Initialized");
+			/* ## */
+		}
+
+		public void stopReading() {
+			keepReading = false;
+		}
+
+		@Override
+		public void run() {
+			/* @@ */
+			Log.d("NetworkRecorder", "Log Reader Running");
+			/* ## */
+			String line;
+			while (keepReading) {
+				try {
+					line = reader.readLine();
+					/* @@ */
+					Log.d("NetworkRecorder", "Read line: " + line);
+					/* ## */
+					if (line == null) {
+						// Wait a bit and try again
+						Thread.sleep(500);
+					} else {
+						notifyLogLine(line);
+					}
+				} catch (InterruptedException ex) {
+					// Move along
+				} catch (IOException ex) {
+					keepReading = false;
+					Log.e("NetworkRecorder", "IOException on logger: " + ex);
+					notifyLogExit();
+				}
 			}
 		}
 	}

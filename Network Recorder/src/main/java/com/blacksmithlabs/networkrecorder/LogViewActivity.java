@@ -7,6 +7,7 @@ import android.os.*;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 import com.blacksmithlabs.networkrecorder.fragments.AppActionHeaderFragment;
 import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
@@ -34,6 +35,7 @@ public class LogViewActivity extends FragmentActivity {
 	protected String logFile;
 	protected boolean newLogRequest = false;
 	protected AppActionHeaderFragment titleFragment;
+	protected TextView logViewText;
 
 	final private KillServiceReceiver killReceiver = new KillServiceReceiver();
 
@@ -125,6 +127,8 @@ public class LogViewActivity extends FragmentActivity {
 		if (app != null) {
 			titleFragment.populateAppData(app);
 		}
+
+		logViewText = (TextView)findViewById(R.id.log_view_text);
 	}
 
 	@Override
@@ -229,14 +233,30 @@ public class LogViewActivity extends FragmentActivity {
 		stopService(new Intent(this, NetworkRecorderService.class));
 	}
 
+	protected void appendText(String toAppend, boolean withNewline) {
+		if (withNewline && !toAppend.endsWith("\n")) {
+			toAppend += "\n";
+		}
+
+		if (logViewText != null) {
+			logViewText.append(toAppend);
+		}
+	}
+
 	private class IncomingHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
 			Log.d("NetworkRecorder", "[client] Received message: " + msg);
 
 			switch (msg.what) {
-				case NetworkRecorderService.MSG_BROADCAST_PACKET:
-					// TODO handle the packet
+				case NetworkRecorderService.MSG_BROADCAST_LOG_LINE:
+					appendText((String)msg.obj, true);
+					break;
+
+				case NetworkRecorderService.MSG_BROADCAST_LOG_EXIT:
+					if (isBound) {
+						appendText(getString(R.string.log_closed), true);
+					}
 					break;
 
 				default:

@@ -21,7 +21,7 @@ public class ShellCommand {
 
 	public ShellCommand(String[] command, String tag) {
 		this.command = command;
-		this.tag = (tag == null || tag.isEmpty()) ? null : tag;
+		this.tag = (tag == null || tag.isEmpty()) ? "" : tag;
 		this.rt = Runtime.getRuntime();
 	}
 
@@ -63,6 +63,7 @@ public class ShellCommand {
 		while (checkForExit() == false) {
 			if (stdoutAvailable()) {
 				// Discarding the read
+				Log.d("NetworkRecorder", "Discarding read: " + readStdout(false));
 			} else {
 				try {
 					Thread.sleep(100);

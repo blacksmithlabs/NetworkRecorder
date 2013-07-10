@@ -22,12 +22,15 @@
     <string name="error_unsupported_system_title">Unsupported system</string>
     <string name="error_unsupported_system_text">The CPU Type %1$s is currently not supported.</string>
     <string name="error_installing_binary">Failed to install %1$s: %2$s</string>
+    <string name="error_applying_iptables_rules">Error applying iptables rules. Exit code: %1$d\n\n%2$s</string>
+    <string name="error_general">An error was encountered: %1$s</string>
     <string name="title_activity_log_view">Application Log</string>
     <string name="title_activity_log_settings">Recorder Configuration</string>
     <string name="recording_on">Recording Traffic</string>
     <string name="recording_off">Record Traffic</string>
     <string name="recording_stop">Stop Recording</string>
     <string name="log_initializing">Initializing log viewer</string>
+    <string name="log_closed">Log reader closed</string>
     <string name="loading">Loading...</string>
     <string name="prompt_stop_recording_title">Stop Recording?</string>
     <string name="prompt_stop_recording_text">Are you sure you want to stop recording?</string>
