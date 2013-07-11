@@ -24,7 +24,7 @@
 FILE* logfile;
 char* remoteaddr;
 int remoteport;
-
+bool verbose = false;
 
 void cleanup(int sig) {
     syslog(LOG_INFO, "Cleaning up...");
@@ -184,6 +184,9 @@ void write_hex(char* buf, int len) {
     *hexpos = '\0';
 
     fwrite(hex, sizeof(char), hexpos-hex, logfile);
+    if (verbose) {
+        fwrite(hex, sizeof(char), hexpos-hex, stdout);
+    }
     delete hex;
 }
 
@@ -194,6 +197,9 @@ int socket_write(int socket, char* buf, int* len, bool isServer) {
     }
 
     fprintf(logfile, "%s (%s:%d) [%d]\n", (isServer ? "S>C" : "C>S"), remoteaddr, remoteport, written);
+    if (verbose) {
+        fprintf(stdout, "%s (%s:%d) [%d]\n", (isServer ? "S>C" : "C>S"), remoteaddr, remoteport, written);
+    }
     write_hex(buf, written);
 
     if (written != *len) {
@@ -268,17 +274,42 @@ int service_client(int client_sock, int server_sock) {
     }
 }
 
+void show_usage(char* name) {
+    fprintf(stderr, "usage: %s [-v] local_port log_file\n", name);
+    exit(1);
+}
 
 int main(int argc, char* argv[]) {
     int client, server;
     int master_sock;
+    int localport;
+    char* log_file_loc;
 
-    if (argc != 3) {
-        fprintf(stderr, "usage: %s local_port log_file\n", argv[0]);
-        exit(1);
+    if (argc == 4) {
+        if (strcmp(argv[1], "-v") != 0) {
+            show_usage(argv[0]);
+        }
+
+        verbose = true;
+        localport = atoi(argv[2]);
+        log_file_loc = argv[3];
+    } else if (argc == 3) {
+        localport = atoi(argv[1]);
+        log_file_loc = argv[2];
+    } else {
+        show_usage(argv[0]);
     }
-    int localport = atoi(argv[1]);
-    logfile = (strcmp(argv[2], "stdout") == 0) ? stdout : fopen(argv[2], "a");
+
+    if (strcmp(log_file_loc, "stdout") == 0) {
+        logfile = stdout;
+        verbose = false;
+    } else {
+        logfile = fopen(log_file_loc, "a");
+    }
+    /* @@ */
+    fprintf(stderr, "logfile %d\n", logfile);
+    fprintf(logfile, "This is a test\n");
+    /* ## */
     if (logfile == NULL) {
         fprintf(stderr, "log_file %s could not be opened\n", argv[2]);
         exit(2);
