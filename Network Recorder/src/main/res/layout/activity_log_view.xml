@@ -17,18 +17,17 @@
           android:layout_height="1dip"
           android:background="@android:color/holo_blue_dark" />
 
-    <ScrollView android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-        <TextView android:id="@+id/log_view_text"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:textAppearance="?android:attr/textAppearanceMedium"
-                  android:enabled="true"
-                  android:focusable="true"
-                  android:gravity="bottom"
-                  android:freezesText="true" />
-
-    </ScrollView>
+    <TextView android:id="@+id/log_view_text"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:textAppearance="?android:attr/textAppearanceMedium"
+              android:typeface="monospace"
+              android:textSize="@dimen/log_font_size"
+              android:maxLines="200"
+              android:scrollbars="vertical"
+              android:enabled="true"
+              android:focusable="true"
+              android:gravity="bottom"
+              android:freezesText="true" />
 
 </LinearLayout>

@@ -13,12 +13,12 @@
               android:numeric="integer"
               android:maxLength="5" />
 
-    <ImageView android:id="@+id/add_port"
+    <ImageView android:id="@+id/remove_port"
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
                android:clickable="true" />
 
-    <ImageView android:id="@+id/remove_port"
+    <ImageView android:id="@+id/add_port"
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
                android:clickable="true" />

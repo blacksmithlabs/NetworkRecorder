@@ -244,19 +244,6 @@ public class NetworkRecorderService extends Service {
 		}
 
 		// TODO we should really gather error information and error if this fails
-		/* @@ */
-		final File f = new File(getFilesDir().getAbsolutePath(), "tcproxy.sh");
-
-		try {
-			final PrintWriter scriptWriter = new PrintWriter(new BufferedWriter(new FileWriter(f)));
-			scriptWriter.println(script.toString());
-			scriptWriter.flush();
-			scriptWriter.close();
-		} catch (IOException ex) {
-			Log.e("NetworkRecorder", "Script 'tcproxy' creation error", ex);
-		}
-		/* ## */
-
 		// Start the proxy
 		SysUtils.executeScript(this, "tcproxy", script.toString(), true, true);
 
@@ -266,9 +253,6 @@ public class NetworkRecorderService extends Service {
 			new Thread(logReader, "tcproxy").start();
 		} catch (FileNotFoundException ex) {
 			logReader = null;
-			/* @@ */
-			Log.e("NetworkRecorder", "Failed to start logger thread: " + ex);
-			/* ## */
 			killLogger();
 
 			throw ex;
@@ -280,8 +264,8 @@ public class NetworkRecorderService extends Service {
 
 		if (logReader != null) {
 			logReader.stopReading();
+			notifyLogExit();
 		}
-		notifyLogExit();
 	}
 
 	protected void notifyLogLine(String line) {
@@ -296,9 +280,6 @@ public class NetworkRecorderService extends Service {
 	}
 
 	protected void notifyLogExit() {
-		/* @@ */
-		Log.d("NetworkRecorder", "Notifying Log Exit");
-		/* ## */
 		for (int i=clients.size() - 1; i>=0; i--) {
 			try {
 				clients.get(i).send(Message.obtain(null, MSG_BROADCAST_LOG_EXIT));
@@ -366,13 +347,7 @@ public class NetworkRecorderService extends Service {
 		private boolean keepReading = true;
 
 		public LogReader() throws FileNotFoundException {
-			/* @@ */
-			Log.d("NetworkRecorder", "Initializing log reader");
-			/* ## */
 			reader = new BufferedReader(new FileReader(new File(logFilePath)));
-			/* @@ */
-			Log.d("NetworkRecorder", "Initialized");
-			/* ## */
 		}
 
 		public void stopReading() {
@@ -381,16 +356,10 @@ public class NetworkRecorderService extends Service {
 
 		@Override
 		public void run() {
-			/* @@ */
-			Log.d("NetworkRecorder", "Log Reader Running");
-			/* ## */
 			String line;
 			while (keepReading) {
 				try {
 					line = reader.readLine();
-					/* @@ */
-					Log.d("NetworkRecorder", "Read line: " + line);
-					/* ## */
 					if (line == null) {
 						// Wait a bit and try again
 						Thread.sleep(500);

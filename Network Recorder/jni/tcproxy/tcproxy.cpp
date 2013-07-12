@@ -26,8 +26,15 @@ char* remoteaddr;
 int remoteport;
 bool verbose = false;
 
-void cleanup(int sig) {
+void do_cleanup() {
     syslog(LOG_INFO, "Cleaning up...");
+    if (logfile != NULL) {
+        fclose(logfile);
+    }
+}
+
+void cleanup(int sig) {
+    do_cleanup();
     exit(0);
 }
 
@@ -44,6 +51,7 @@ int set_nonblock(int fd) {
     int fl = fcntl(fd, F_GETFL, 0);
     if (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0) {
         syslog(LOG_ERR, "fcntl F_SETFL: FD %d: %s", fd, strerror(errno));
+        do_cleanup();
         exit(1);
     }
 }
@@ -55,6 +63,7 @@ int create_server_sock(int port) {
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
         perror("socket");
+        do_cleanup();
         exit(1);
     }
 
@@ -67,12 +76,14 @@ int create_server_sock(int port) {
     x = bind(s, (struct sockaddr*)&client_addr, addrlen);
     if (x < 0) {
         perror("bind");
+        do_cleanup();
         exit(1);
     }
 
     x = listen(s, 5);
     if (x < 0) {
         perror("listen");
+        do_cleanup();
         exit(1);
     }
 
@@ -201,6 +212,7 @@ int socket_write(int socket, char* buf, int* len, bool isServer) {
         fprintf(stdout, "%s (%s:%d) [%d]\n", (isServer ? "S>C" : "C>S"), remoteaddr, remoteport, written);
     }
     write_hex(buf, written);
+    fflush(logfile);
 
     if (written != *len) {
         memmove(buf, buf+written, (*len)-written);
@@ -306,10 +318,6 @@ int main(int argc, char* argv[]) {
     } else {
         logfile = fopen(log_file_loc, "a");
     }
-    /* @@ */
-    fprintf(stderr, "logfile %d\n", logfile);
-    fprintf(logfile, "This is a test\n");
-    /* ## */
     if (logfile == NULL) {
         fprintf(stderr, "log_file %s could not be opened\n", argv[2]);
         exit(2);

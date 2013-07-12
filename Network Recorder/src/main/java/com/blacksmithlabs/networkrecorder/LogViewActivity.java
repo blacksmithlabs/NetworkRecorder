@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.*;
 import android.os.*;
 import android.support.v4.app.FragmentActivity;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -24,6 +25,8 @@ public class LogViewActivity extends FragmentActivity {
 	public static final String EXTRA_PORTS = "LogView.ports";
 	public static final String EXTRA_START = "LogView.start";
 	public static final String EXTRA_LOG_FILE = "LogView.logFile";
+
+	public static final int MAX_LINES = 200;
 
 	public static Messenger service = null;
 	public static Messenger messenger = null;
@@ -129,6 +132,7 @@ public class LogViewActivity extends FragmentActivity {
 		}
 
 		logViewText = (TextView)findViewById(R.id.log_view_text);
+		logViewText.setMovementMethod(new ScrollingMovementMethod());
 	}
 
 	@Override
@@ -240,6 +244,13 @@ public class LogViewActivity extends FragmentActivity {
 
 		if (logViewText != null) {
 			logViewText.append(toAppend);
+			// Remove excessive lines
+			int excessLines = logViewText.getLineCount() - MAX_LINES;
+			if (excessLines > 0) {
+				int eolIndex = logViewText.getLayout().getLineEnd(excessLines);
+				CharSequence newText = logViewText.getText().subSequence(eolIndex, logViewText.length());
+				logViewText.setText(newText);
+			}
 		}
 	}
 
