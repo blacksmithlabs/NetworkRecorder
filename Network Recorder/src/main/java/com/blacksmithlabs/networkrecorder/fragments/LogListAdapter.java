@@ -1,4 +1,4 @@
-package com.blacksmithlabs.networkrecorder;
+package com.blacksmithlabs.networkrecorder.fragments;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,11 +7,9 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import com.blacksmithlabs.networkrecorder.helpers.LogHelper;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.blacksmithlabs.networkrecorder.R;
+import com.blacksmithlabs.networkrecorder.helpers.LogHelper;
 
 /**
  * Created by brian on 6/24/13.

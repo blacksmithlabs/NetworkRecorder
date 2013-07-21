@@ -9,7 +9,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.*;
 import android.util.Log;
+
+import com.blacksmithlabs.networkrecorder.db.LogEntryDatabase;
+import com.blacksmithlabs.networkrecorder.helpers.ApplicationHelper;
 import com.blacksmithlabs.networkrecorder.helpers.IPTables;
+import com.blacksmithlabs.networkrecorder.helpers.LogHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
 import com.blacksmithlabs.networkrecorder.helpers.SysUtils;
 
@@ -41,6 +45,8 @@ public class NetworkRecorderService extends Service {
 	public static NetworkRecorderService instance;
 	public static Handler handler;
 
+	private static int logAppUID = -1;
+	private static String logEntryID = null;
 	private static String logFile = null;
 	private static String logFilePath = null;
 	private static Notification notification;
@@ -101,17 +107,20 @@ public class NetworkRecorderService extends Service {
 		}
 
 		final Bundle extras = intent.getExtras();
-		final int uid = extras.getInt(EXTRA_APP_UID, -1);
 		final ArrayList<Integer> ports = extras.getIntegerArrayList(EXTRA_PORTS);
 
-		if (uid == -1 || ports == null || ports.isEmpty()) {
+		logAppUID = extras.getInt(EXTRA_APP_UID, -1);
+
+		if (logAppUID == -1 || ports == null || ports.isEmpty()) {
 			Log.e("NetworkRecorder", "[service] Invalid arguments. No app or ports specified.");
 			return Service.START_NOT_STICKY;
 		}
 
+		final String date = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date());
+		logEntryID = logAppUID + "#" + date;
+
 		logFile = extras.getString(EXTRA_LOG_FILE);
 		if (logFile == null || logFile.isEmpty()) {
-			final String date = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date());
 			logFile =  date + ".log";
 		}
 
@@ -122,7 +131,7 @@ public class NetworkRecorderService extends Service {
 			public void handleMessage(Message what) {
 				Log.d("NetworkRecorder", "[service] Starting: " + logFile);
 
-				if (!startRecording(uid, ports)) {
+				if (!startRecording(ports)) {
 					Log.d("NetworkRecorder", "[service] start recording error, aborting");
 					handler.post(new Runnable() {
 						@Override
@@ -158,6 +167,7 @@ public class NetworkRecorderService extends Service {
 	protected Notification createNotification() {
 		final Intent logViewIntent = new Intent(this, LogViewActivity.class);
 		logViewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		logViewIntent.putExtra(LogViewActivity.EXTRA_APP, ApplicationHelper.getAppInfo(logAppUID));
 		logViewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
 
 		final Intent stopLogIntent = new Intent(BROADCAST_KILL_SERVICE);
@@ -179,28 +189,59 @@ public class NetworkRecorderService extends Service {
 		return new File(getDir("run", Context.MODE_PRIVATE), SysUtils.getTcproxyBin() + ".pid");
 	}
 
-	protected boolean startRecording(final int uid, final List<Integer> ports) {
+	protected boolean startRecording(final List<Integer> ports) {
 		notification = createNotification();
 
 		startForeground(NOTIFICATION_ID, notification);
 
+		long logID = -1;
 		try {
 			killLogger();
-			if (!IPTables.applyRules(this, uid, ports, false)) {
+			if (!IPTables.applyRules(this, logAppUID, ports, false)) {
 				throw new Exception("iptables rules failed");
 			}
+			logID = createLogEntry();
 			startLogger();
 		} catch (Exception ex) {
 			Log.e("NetworkRecorder", "Failed to start recording log data: " + ex.getMessage());
+			if (logID >= 0) {
+				deleteLogEntry(logID);
+			}
 			return false;
 		}
 
 		return true;
 	}
 
+	protected long createLogEntry() {
+		final LogEntryDatabase db = new LogEntryDatabase(NetworkRecorderService.this);
+		final long logID = db.createLogEntry(logAppUID, logEntryID, logFile, logFilePath);
+		Log.d("NetworkRecorder", "[service] created log " + logID);
+
+		return logID;
+	}
+
+	protected boolean deleteLogEntry(long logID) {
+		final LogEntryDatabase db = new LogEntryDatabase(NetworkRecorderService.this);
+		final int rows = db.deleteLog(logID);
+
+		return rows != 0;
+	}
+
+	protected boolean updateLogEntrySize() {
+		final File log = new File(logFilePath);
+
+		final LogEntryDatabase db = new LogEntryDatabase(NetworkRecorderService.this);
+		final int rows = db.updateLogLength(logAppUID, logEntryID, log.length());
+
+		return rows != 0;
+	}
+
 	protected void stopRecording() {
 		IPTables.removeRules(this);
 		killLogger();
+		updateLogEntrySize();
+		LogHelper.clearCache();
 	}
 
 	protected String killLoggerScript() {

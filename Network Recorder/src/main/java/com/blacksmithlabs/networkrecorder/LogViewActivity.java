@@ -27,6 +27,7 @@ public class LogViewActivity extends FragmentActivity {
 	public static final String EXTRA_LOG_FILE = "LogView.logFile";
 
 	public static final int MAX_LINES = 200;
+	public static boolean trimLines = false;
 
 	public static Messenger service = null;
 	public static Messenger messenger = null;
@@ -153,7 +154,12 @@ public class LogViewActivity extends FragmentActivity {
 	public void onAppHeaderToggleClicked(View view) {
 		final ToggleButton toggle = (ToggleButton)view;
 		if (toggle.isChecked()) {
-			startService();
+			new Handler() {
+				@Override
+				public void handleMessage(Message msg) {
+					startService();
+				}
+			}.sendEmptyMessageDelayed(0, 100);
 		} else {
 			promptStopService(toggle);
 		}
@@ -245,11 +251,13 @@ public class LogViewActivity extends FragmentActivity {
 		if (logViewText != null) {
 			logViewText.append(toAppend);
 			// Remove excessive lines
-			int excessLines = logViewText.getLineCount() - MAX_LINES;
-			if (excessLines > 0) {
-				int eolIndex = logViewText.getLayout().getLineEnd(excessLines);
-				CharSequence newText = logViewText.getText().subSequence(eolIndex, logViewText.length());
-				logViewText.setText(newText);
+			if (trimLines) {
+				int excessLines = logViewText.getLineCount() - MAX_LINES;
+				if (excessLines > 0) {
+					int eolIndex = logViewText.getLayout().getLineEnd(excessLines);
+					CharSequence newText = logViewText.getText().subSequence(eolIndex, logViewText.length());
+					logViewText.setText(newText);
+				}
 			}
 		}
 	}
@@ -257,8 +265,6 @@ public class LogViewActivity extends FragmentActivity {
 	private class IncomingHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
-			Log.d("NetworkRecorder", "[client] Received message: " + msg);
-
 			switch (msg.what) {
 				case NetworkRecorderService.MSG_BROADCAST_LOG_LINE:
 					appendText((String)msg.obj, true);

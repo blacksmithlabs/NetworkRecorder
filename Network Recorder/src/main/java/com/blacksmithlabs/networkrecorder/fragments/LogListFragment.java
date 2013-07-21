@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
-import com.blacksmithlabs.networkrecorder.LogListAdapter;
+
 import com.blacksmithlabs.networkrecorder.R;
 import com.blacksmithlabs.networkrecorder.helpers.LogHelper;
 import com.blacksmithlabs.networkrecorder.helpers.MessageBox;
@@ -36,6 +36,9 @@ public class LogListFragment extends Fragment
 	@Override
 	public void onResume() {
 		super.onResume();
+		/* @@ */
+		Log.d("NetworkRecorder", "LogListFragment.onResume(" + (logListView == null) + ")");
+		/* ## */
 
 		if (logListView == null) {
 			logListView = (ExpandableListView)getView().findViewById(R.id.log_list);
