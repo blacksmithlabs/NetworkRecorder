@@ -12,6 +12,54 @@ dependencies {
     compile files('libs/android-support-v4.jar')
 }
 
+['armeabi':'armv5', 'armeabi-v7a':'armv7', 'mips':'mips', 'x86':'x86'].each() { dir, suffix ->
+    ['iptables', 'tcproxy', 'grep'].each() { bin ->
+        tasks.create(name: "copyNativeExecutable_${dir}_${bin}", type: Zip, group: "native_${dir}") {
+            doFirst {
+                println "Copying $dir $bin"
+                ant.checksum(file: file("libs/${dir}/${bin}"), property: "cs_${dir}_${bin}")
+                println "$dir $bin Checksum: ${ant.properties["cs_${dir}_${bin}"]}"
+            }
+
+            from file("libs/${dir}/${bin}")
+            destinationDir file("src/main/res/raw")
+            archiveName "${bin}_${suffix}.zip"
+        }
+    }
+}
+
+task copyNativeExecutables(dependsOn: 'buildNative') {
+    doFirst {
+        println "Copying native executables"
+    }
+
+    doLast {
+        tasks.each() { Task task ->
+            if (task.name.startsWith("copyNativeExecutable_")) {
+                task.execute()
+            }
+        }
+    }
+}
+
+task buildNative(type: Exec) {
+    if (System.env.NDK_HOME != null) {
+        doFirst {
+            println "Building Native Executables"
+        }
+        def ndkBuild = new File(System.env.NDK_HOME, 'ndk-build')
+        commandLine ndkBuild
+    } else {
+        commandLine 'echo'
+        doLast {
+            println '##################'
+            println 'Skipping NDK build'
+            println 'Reason: NDK_HOME not set.'
+            println '##################'
+        }
+    }
+}
+
 android {
     compileSdkVersion 17
     buildToolsVersion "17.0.0"
