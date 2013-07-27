@@ -26,7 +26,7 @@
         <service android:name="com.blacksmithlabs.networkrecorder.NetworkRecorderService" />
 
         <activity
-            android:name="com.blacksmithlabs.networkrecorder.LogViewActivity"
+            android:name=".LogRecorderActivity"
             android:label="@string/title_activity_log_view" >
         </activity>
         <activity
@@ -36,6 +36,10 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="MainActivity" />
+        </activity>
+        <activity
+            android:name="com.blacksmithlabs.networkrecorder.ViewLogActivity"
+            android:label="@string/title_activity_view_log" >
         </activity>
     </application>
 

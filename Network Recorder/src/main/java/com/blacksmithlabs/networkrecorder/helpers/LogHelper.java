@@ -7,6 +7,8 @@ import android.database.Cursor;
 import android.os.Handler;
 import android.os.Message;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import com.blacksmithlabs.networkrecorder.R;
 import com.blacksmithlabs.networkrecorder.db.LogEntryDatabase;
 import com.blacksmithlabs.networkrecorder.db.LogEntryDatabase.LogEntryTable;
@@ -166,7 +168,7 @@ public class LogHelper {
 	/**
 	 * Small class to hold log file information
 	 */
-	public static final class LogFile {
+	public static final class LogFile implements Parcelable {
 		final public int _ID;
 		final public int appUID;
 		final public String fileName;
@@ -175,7 +177,11 @@ public class LogHelper {
 		final public String fullPath;
 		final public String logEntryID;
 
-		public LogFile(Cursor cursor) {
+		/**
+		 * Create an instance of this class from an SQL cursor
+		 * @param cursor
+		 */
+		private LogFile(Cursor cursor) {
 			_ID = cursor.getInt(
 					cursor.getColumnIndexOrThrow(LogEntryTable._ID)
 			);
@@ -201,9 +207,51 @@ public class LogHelper {
 			creationDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(creationTime * 1000));
 		}
 
+		/**
+		 * Unparcel an instance of this class
+		 * @param parcel
+		 */
+		private LogFile(Parcel parcel) {
+			_ID = parcel.readInt();
+			appUID = parcel.readInt();
+			fileName = parcel.readString();
+			creationDate = parcel.readString();
+			logSize = parcel.readLong();
+			fullPath = parcel.readString();
+			logEntryID = parcel.readString();
+		}
+
 		public BufferedReader getContents() {
 			// TODO implement get the full contents of the log file
 			return null;
 		}
+
+		@Override
+		public int describeContents() {
+			return 0;
+		}
+
+		@Override
+		public void writeToParcel(Parcel parcel, int flags) {
+			parcel.writeInt(_ID);
+			parcel.writeInt(appUID);
+			parcel.writeString(fileName);
+			parcel.writeString(creationDate);
+			parcel.writeLong(logSize);
+			parcel.writeString(fullPath);
+			parcel.writeString(logEntryID);
+		}
+
+		public static final Creator<LogFile> CREATOR = new Creator<LogFile>() {
+			@Override
+			public LogFile createFromParcel(Parcel parcel) {
+				return new LogFile(parcel);
+			}
+
+			@Override
+			public LogFile[] newArray(int size) {
+				return new LogFile[size];
+			}
+		};
 	}
 }

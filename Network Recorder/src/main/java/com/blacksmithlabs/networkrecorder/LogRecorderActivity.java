@@ -20,11 +20,11 @@ import java.util.ArrayList;
 /**
  * Created by brian on 6/24/13.
  */
-public class LogViewActivity extends FragmentActivity {
-	public static final String EXTRA_APP = "LogView.app";
-	public static final String EXTRA_PORTS = "LogView.ports";
-	public static final String EXTRA_START = "LogView.start";
-	public static final String EXTRA_LOG_FILE = "LogView.logFile";
+public class LogRecorderActivity extends FragmentActivity {
+	public static final String EXTRA_APP = "LogRecorder.app";
+	public static final String EXTRA_PORTS = "LogRecorder.ports";
+	public static final String EXTRA_START = "LogRecorder.start";
+	public static final String EXTRA_LOG_FILE = "LogRecorder.logFile";
 
 	public static final int MAX_LINES = 200;
 	public static boolean trimLines = false;
@@ -46,7 +46,7 @@ public class LogViewActivity extends FragmentActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.activity_log_view);
+		setContentView(R.layout.activity_log_recorder);
 
 		if (savedInstanceState != null) {
 			app = savedInstanceState.getParcelable(EXTRA_APP);
@@ -85,7 +85,7 @@ public class LogViewActivity extends FragmentActivity {
 				MessageBox.error(this, errorMessage, new DialogInterface.OnDismissListener() {
 					@Override
 					public void onDismiss(DialogInterface dialogInterface) {
-						LogViewActivity.this.finish();
+						LogRecorderActivity.this.finish();
 					}
 				});
 				return;
@@ -97,11 +97,11 @@ public class LogViewActivity extends FragmentActivity {
 		registerReceiver(killReceiver, new IntentFilter(NetworkRecorderService.BROADCAST_KILL_SERVICE));
 
 		// Spawn off our start up in a thread
-		final ProgressDialog progress = ProgressDialog.show(this, getString(R.string.loading), getString(R.string.log_initializing), true, true);
+		final ProgressDialog progress = ProgressDialog.show(this, getString(R.string.loading), getString(R.string.log_initializing), true, false);
 		new Handler() {
 			@Override
 			public void handleMessage(Message msg) {
-				boolean serviceRunning = SysUtils.isServiceRunning(LogViewActivity.this, NetworkRecorderService.class.getName());
+				boolean serviceRunning = SysUtils.isServiceRunning(LogRecorderActivity.this, NetworkRecorderService.class.getName());
 
 				try {
 					progress.dismiss();

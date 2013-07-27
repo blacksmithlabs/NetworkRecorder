@@ -165,10 +165,10 @@ public class NetworkRecorderService extends Service {
 	}
 
 	protected Notification createNotification() {
-		final Intent logViewIntent = new Intent(this, LogViewActivity.class);
+		final Intent logViewIntent = new Intent(this, LogRecorderActivity.class);
 		logViewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		logViewIntent.putExtra(LogViewActivity.EXTRA_APP, ApplicationHelper.getAppInfo(logAppUID));
-		logViewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
+		logViewIntent.putExtra(LogRecorderActivity.EXTRA_APP, ApplicationHelper.getAppInfo(logAppUID));
+		logViewIntent.putExtra(LogRecorderActivity.EXTRA_LOG_FILE, logFile);
 
 		final Intent stopLogIntent = new Intent(BROADCAST_KILL_SERVICE);
 		stopLogIntent.putExtra(BROADCAST_EXTRA_VIEW_LOG, true);
@@ -335,9 +335,9 @@ public class NetworkRecorderService extends Service {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.getBooleanExtra(BROADCAST_EXTRA_VIEW_LOG, false)) {
-				final Intent viewIntent = new Intent(NetworkRecorderService.this, LogViewActivity.class);
+				final Intent viewIntent = new Intent(NetworkRecorderService.this, LogRecorderActivity.class);
 				viewIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-				viewIntent.putExtra(LogViewActivity.EXTRA_LOG_FILE, logFile);
+				viewIntent.putExtra(LogRecorderActivity.EXTRA_LOG_FILE, logFile);
 				getApplication().startActivity(viewIntent);
 			}
 

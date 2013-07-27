@@ -36,9 +36,6 @@ public class LogListFragment extends Fragment
 	@Override
 	public void onResume() {
 		super.onResume();
-		/* @@ */
-		Log.d("NetworkRecorder", "LogListFragment.onResume(" + (logListView == null) + ")");
-		/* ## */
 
 		if (logListView == null) {
 			logListView = (ExpandableListView)getView().findViewById(R.id.log_list);

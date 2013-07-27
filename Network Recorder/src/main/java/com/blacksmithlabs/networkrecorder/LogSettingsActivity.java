@@ -114,10 +114,10 @@ public class LogSettingsActivity extends FragmentActivity {
 				return;
 			}
 
-			final Intent logIntent = new Intent(this, LogViewActivity.class);
-			logIntent.putExtra(LogViewActivity.EXTRA_START, true);
-			logIntent.putExtra(LogViewActivity.EXTRA_APP, app);
-			logIntent.putExtra(LogViewActivity.EXTRA_PORTS, new ArrayList<Integer>(ports));
+			final Intent logIntent = new Intent(this, LogRecorderActivity.class);
+			logIntent.putExtra(LogRecorderActivity.EXTRA_START, true);
+			logIntent.putExtra(LogRecorderActivity.EXTRA_APP, app);
+			logIntent.putExtra(LogRecorderActivity.EXTRA_PORTS, new ArrayList<Integer>(ports));
 			logIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			startActivity(logIntent);
 			finish();

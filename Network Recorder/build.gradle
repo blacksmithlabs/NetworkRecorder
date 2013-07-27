@@ -12,6 +12,7 @@ dependencies {
     compile files('libs/android-support-v4.jar')
 }
 
+/*
 ['armeabi':'armv5', 'armeabi-v7a':'armv7', 'mips':'mips', 'x86':'x86'].each() { dir, suffix ->
     ['iptables', 'tcproxy', 'grep'].each() { bin ->
         tasks.create(name: "copyNativeExecutable_${dir}_${bin}", type: Zip, group: "native_${dir}") {
@@ -59,6 +60,7 @@ task buildNative(type: Exec) {
         }
     }
 }
+*/
 
 android {
     compileSdkVersion 17
