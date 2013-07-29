@@ -169,7 +169,6 @@ public class LogSettingsActivity extends FragmentActivity {
 			final View view = inflater.inflate(R.layout.settings_port_fragment, container, false);
 
 			final ImageView addButton = (ImageView)view.findViewById(R.id.add_port);
-			addButton.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_menu_add));
 			addButton.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View view) {
@@ -178,7 +177,6 @@ public class LogSettingsActivity extends FragmentActivity {
 			});
 
 			final ImageView removeButton = (ImageView)view.findViewById(R.id.remove_port);
-			removeButton.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_menu_delete));
 			removeButton.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View view) {

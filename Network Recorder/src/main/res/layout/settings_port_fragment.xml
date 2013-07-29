@@ -8,6 +8,7 @@
     <ImageView android:id="@+id/remove_port"
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
+               android:src="@android:drawable/ic_menu_delete"
                android:clickable="true" />
 
     <EditText android:id="@+id/port"
@@ -20,6 +21,7 @@
     <ImageView android:id="@+id/add_port"
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
+               android:src="@android:drawable/ic_menu_add"
                android:clickable="true" />
 
 </LinearLayout>
